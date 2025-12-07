@@ -18,7 +18,7 @@ const Brand = sequelize.define(
       allowNull: false,
       unique: true,
     },
-    log: {
+    logo: {
       type: DataTypes.STRING,
       allowNull: true,
     },

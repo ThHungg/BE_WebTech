@@ -22,8 +22,8 @@ const Category = sequelize.define(
       allowNull: false,
       unique: true,
     },
-    img: {
-      type: DataTypes.STRING,
+    icon_emoji: {
+      type: DataTypes.STRING(10),
       allowNull: true,
     },
   },
