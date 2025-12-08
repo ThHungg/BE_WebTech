@@ -5,6 +5,20 @@ const { Category } = require("../models");
 const createCateBrandLink = async (newLink) => {
   try {
     const { categoryId, brandId } = newLink;
+    const checkCategory = await Category.findByPk(categoryId);
+    if (!checkCategory) {
+      return {
+        status: "Err",
+        message: "Danh mục không tồn tại",
+      };
+    }
+    const checkBrand = await Brand.findByPk(brandId);
+    if (!checkBrand) {
+      return {
+        status: "Err",
+        message: "Thương hiệu không tồn tại",
+      };
+    }
     const checkLink = await Cate_Brand_Link.findOne({
       where: { category_id: categoryId, brand_id: brandId },
     });
@@ -50,11 +64,13 @@ const getLinksByCategoryId = async (categoryId) => {
         { model: Category, as: "category" },
       ],
     });
+    const result = links.map((link) => link.brand);
+    console.log("result", result);
     console.log("links", links);
     return {
       status: "Ok",
       message: "Lấy liên kết danh mục - thương hiệu thành công",
-      data: links,
+      data: result,
     };
   } catch (e) {
     console.log(e);

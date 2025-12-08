@@ -9,10 +9,6 @@ const Unit = sequelize.define(
       primaryKey: true,
       autoIncrement: true,
     },
-    name: {
-      type: DataTypes.STRING,
-      allowNull: false,
-    },
     symbol: {
       type: DataTypes.STRING,
       allowNull: false,

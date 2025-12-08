@@ -3,7 +3,17 @@ const Category = require("../models/Category");
 const createCategory = async (newCategory) => {
   try {
     const { name, parent_id, icon_emoji } = newCategory;
+    console.log("New Category: ", newCategory);
     const checkName = await Category.findOne({ where: { name } });
+    if (parent_id) {
+      const checkParent = await Category.findByPk(parent_id);
+      if (!checkParent) {
+        return {
+          status: "Err",
+          message: "Danh mục cha không tồn tại",
+        };
+      }
+    }
     if (checkName) {
       return {
         status: "Err",

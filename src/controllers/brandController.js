@@ -5,6 +5,7 @@ const createBrand = async (req, res) => {
   try {
     const { name } = req.body;
     const image = req.file.filename;
+    console.log("Image File: ", name);
     if (!name || !image) {
       deleteFile(`Img/brands/${image}`);
       return res.status(400).json({

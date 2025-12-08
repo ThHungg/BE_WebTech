@@ -50,3 +50,5 @@ const Product_Variant = sequelize.define(
     tableName: "Product_Variant",
   }
 );
+
+module.exports = Product_Variant;

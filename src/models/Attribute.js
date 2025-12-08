@@ -17,14 +17,6 @@ const Attribute = sequelize.define(
       type: DataTypes.INTEGER,
       allowNull: true,
     },
-    data_type: {
-      type: DataTypes.STRING,
-      allowNull: false,
-    },
-    input_type: {
-      type: DataTypes.STRING,
-      allowNull: false,
-    },
   },
   {
     tableName: "Attribute",
