@@ -8,14 +8,14 @@ const createBrand = async (newBrand) => {
     // console.log("url img", `/Img/brands/${image}`);
     const checkName = await Brand.findOne({ where: { name } });
     if (checkName) {
-      deleteFile(`Img/brands/${image}`);
+      deleteFile(`public/Img/brands/${image}`);
       return { status: "Err", message: "Tên thương hiệu đã tồn tại" };
     }
     const slug = generateSlug(name);
     const createBrand = await Brand.create({
       name,
       slug,
-      logo: `/Img/brands/${image}`,
+      logo: `public/Img/brands/${image}`,
     });
 
     return {
@@ -24,7 +24,7 @@ const createBrand = async (newBrand) => {
       data: createBrand,
     };
   } catch (e) {
-    deleteFile(`Img/brands/${image}`);
+    deleteFile(`public/Img/brands/${image}`);
     return {
       status: "Err",
       message: "Lỗi hệ thống vui lòng thử lại sau",
@@ -38,7 +38,7 @@ const updateBrand = async (brandInfo) => {
     const brand = await Brand.findByPk(brandId);
     if (!brand) {
       if (image) {
-        deleteFile(`Img/brands/${image}`);
+        deleteFile(`public/Img/brands/${image}`);
       }
       return {
         status: "Err",
@@ -50,7 +50,7 @@ const updateBrand = async (brandInfo) => {
       brand.slug = generateSlug(name);
     }
     if (image) {
-      brand.logo = `/Img/brands/${image}`;
+      brand.logo = `public/Img/brands/${image}`;
     }
     await brand.save();
     return {
@@ -60,7 +60,7 @@ const updateBrand = async (brandInfo) => {
     };
   } catch (e) {
     if (image) {
-      deleteFile(`Img/brands/${image}`);
+      deleteFile(`public/Img/brands/${image}`);
     }
     return {
       status: "Err",

@@ -2,7 +2,7 @@ const fs = require("fs");
 const path = require("path");
 
 const deleteFile = (filePath) => {
-  const fullPath = path.join(__dirname, "../public/", filePath);
+  const fullPath = path.join(__dirname, "../", filePath);
   if (fs.existsSync(fullPath)) {
     fs.unlinkSync(fullPath);
     console.log("Đã xóa thành công", fullPath);

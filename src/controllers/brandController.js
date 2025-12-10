@@ -5,9 +5,8 @@ const createBrand = async (req, res) => {
   try {
     const { name } = req.body;
     const image = req.file.filename;
-    console.log("Image File: ", name);
     if (!name || !image) {
-      deleteFile(`Img/brands/${image}`);
+      deleteFile(`public/Img/brands/${image}`);
       return res.status(400).json({
         status: "Err",
         message: "Vui lòng nhập đầy đủ thông tin",
@@ -16,7 +15,7 @@ const createBrand = async (req, res) => {
     const response = await brandService.createBrand({ name, image });
     return res.status(200).json(response);
   } catch (e) {
-    deleteFile(`Img/brands/${image}`);
+    deleteFile(`public/Img/brands/${image}`);
     return res
       .status(500)
       .json({ status: "Err", message: "Lỗi hệ thống vui lòng thử lại sau" });
@@ -30,7 +29,7 @@ const updateBrand = async (req, res) => {
     const image = req.file.filename;
     if (!brandId || !name) {
       if (image) {
-        deleteFile(`Img/brands/${image}`);
+        deleteFile(`public/Img/brands/${image}`);
       }
       return res.status(400).json({
         status: "Err",
@@ -41,7 +40,7 @@ const updateBrand = async (req, res) => {
     return res.status(200).json(response);
   } catch (e) {
     if (image) {
-      deleteFile(`Img/brands/${image}`);
+      deleteFile(`public/Img/brands/${image}`);
     }
     return res
       .status(500)

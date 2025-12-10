@@ -9,7 +9,11 @@ const Product = sequelize.define(
       primaryKey: true,
       autoIncrement: true,
     },
-    cate_brand_link_id: {
+    brand_id: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+    },
+    category_id: {
       type: DataTypes.INTEGER,
       allowNull: false,
     },

@@ -4,7 +4,8 @@ const categoryRoutes = require("./categoryRoutes");
 const cate_brand_linkRoutes = require("./cate_brand_linkRoutes");
 const unitRoutes = require("./unitRoutes");
 const attributeRoutes = require("./attributeRoutes");
-const cate_attribute_link = require("./cate_attribute_link");
+const cate_attribute_linkRoutes = require("./cate_attribute_link");
+const productRoutes = require("./productRoutes");
 
 const routes = (app) => {
   app.use("/api/users", userRoutes);
@@ -13,7 +14,8 @@ const routes = (app) => {
   app.use("/api/cate_brand_links", cate_brand_linkRoutes);
   app.use("/api/units", unitRoutes);
   app.use("/api/attributes", attributeRoutes);
-  app.use("/api/cate_attribute_links", cate_attribute_link);
+  app.use("/api/cate_attribute_links", cate_attribute_linkRoutes);
+  app.use("/api/products", productRoutes);
 };
 
 module.exports = routes;

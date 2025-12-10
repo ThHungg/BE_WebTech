@@ -35,6 +35,10 @@ const Product_Variant = sequelize.define(
       type: DataTypes.DECIMAL(10, 2),
       allowNull: false,
     },
+    price: {
+      type: DataTypes.DECIMAL(10, 2),
+      allowNull: false,
+    },
     discount_amount: {
       type: DataTypes.DECIMAL(10, 2),
       allowNull: false,
@@ -48,6 +52,7 @@ const Product_Variant = sequelize.define(
   },
   {
     tableName: "Product_Variant",
+    timestamps: false,
   }
 );
 

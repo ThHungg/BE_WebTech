@@ -85,15 +85,21 @@ CREATE TABLE Cate_Brand_Link (
 );
 
 -- 7. Product (ĐÃ SỬA ĐỔI: Dùng cate_brand_link_id thay cho brand_id và category_id trực tiếp)
+
 CREATE TABLE Product (
     id INT PRIMARY KEY AUTO_INCREMENT,
-    cate_brand_link_id INT NOT NULL, -- FK tham chiếu đến Cate_Brand_Link
+    brand_id INT NOT NULL,              -- FK MỚI/QUAY LẠI
+    category_id INT NOT NULL,           -- FK MỚI/QUAY LẠI
     name VARCHAR(255) NOT NULL,
     avg_rating DECIMAL(2, 1) DEFAULT 0.0,
     total_sold INT DEFAULT 0,
     total_stock INT DEFAULT 0,
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
-    FOREIGN KEY (cate_brand_link_id) REFERENCES Cate_Brand_Link(id)
+    
+    -- Khóa Ngoại MỚI
+    FOREIGN KEY (brand_id) REFERENCES Brand(id),
+    FOREIGN KEY (category_id) REFERENCES Category(id)
+    -- Đã loại bỏ FOREIGN KEY (cate_brand_link_id)
 );
 
 CREATE TABLE Product_Description_Block (

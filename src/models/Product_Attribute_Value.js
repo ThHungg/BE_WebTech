@@ -7,10 +7,12 @@ const Product_Attribute_Value = sequelize.define(
     product_id: {
       type: DataTypes.INTEGER,
       allowNull: false,
+      primaryKey: true,
     },
     attribute_id: {
       type: DataTypes.INTEGER,
       allowNull: false,
+      primaryKey: true,
     },
     value: {
       type: DataTypes.STRING,

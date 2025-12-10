@@ -18,12 +18,7 @@ router.post(
   brandController.updateBrand
 );
 
-router.get(
-  "/getAll",
-  authMiddleware,
-  roleMddleware(["Admin"]),
-  brandController.getAllBrands
-);
+router.get("/getAll", brandController.getAllBrands);
 
 router.delete(
   "/delete/:brandId",

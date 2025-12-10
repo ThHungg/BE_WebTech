@@ -41,4 +41,5 @@ const createUpload = (folder) => {
 
 module.exports = {
   uploadBrand: createUpload("brands"),
+  uploadProduct: createUpload("products"),
 };

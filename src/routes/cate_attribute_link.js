@@ -3,5 +3,6 @@ const router = express.Router();
 const cateAttributeLinkController = require("../controllers/cateAttributeLinkController");
 
 router.post("/link", cateAttributeLinkController.createCateAttributeLink);
+router.get("/getByCategory/:categoryId", cateAttributeLinkController.getLinksByCategoryId);
 
 module.exports = router;

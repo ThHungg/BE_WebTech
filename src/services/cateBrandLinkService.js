@@ -65,8 +65,6 @@ const getLinksByCategoryId = async (categoryId) => {
       ],
     });
     const result = links.map((link) => link.brand);
-    console.log("result", result);
-    console.log("links", links);
     return {
       status: "Ok",
       message: "Lấy liên kết danh mục - thương hiệu thành công",
