@@ -28,7 +28,7 @@ const refreshToken = async (token) => {
       };
     }
     const decoded = jwt.verify(token, Refresh_Token);
-    const accessToken = genneralAccessToken({
+    const accessToken = generateAccessToken({
       id: decoded.id,
       role: decoded.role,
     });
@@ -39,6 +39,7 @@ const refreshToken = async (token) => {
       accessToken: accessToken,
     };
   } catch (e) {
+    console.log(e);
     return {
       status: "Err",
       message: "Token không hợp lệ",

@@ -1,4 +1,5 @@
 const userSerivce = require("../services/userService");
+const jwtService = require("../services/jwtService");
 
 const register = async (req, res) => {
   try {
@@ -43,6 +44,25 @@ const login = async (req, res) => {
       sameSite: "Strict",
     });
     return res.status(200).json(newReponse);
+  } catch (e) {
+    return res
+      .status(500)
+      .json({ status: "Err", message: "Lỗi hệ thống vui lòng thử lại sau" });
+  }
+};
+
+const refreshToken = async (req, res) => {
+  try {
+    const { refresh_token } = req.cookies;
+    console.log("Refresh Token: ", refresh_token);
+    if (!refresh_token) {
+      return res.status(400).json({
+        status: "Err",
+        message: "Vui lòng đăng nhập",
+      });
+    }
+    const response = await jwtService.refreshToken(refresh_token);
+    res.json(response);
   } catch (e) {
     return res
       .status(500)
@@ -207,6 +227,7 @@ const getAllUser = async (req, res) => {
 module.exports = {
   register,
   login,
+  refreshToken,
   updateUser,
   getUserById,
   addAddress,
