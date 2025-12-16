@@ -44,7 +44,40 @@ const getLinksByCategoryId = async (req, res) => {
   }
 };
 
+const getLinksByBrandId = async (req, res) => {
+  try {
+    const { brandId } = req.params;
+    if (!brandId) {
+      return res.status(400).json({
+        status: "Err",
+        message: "Vui lòng nhập ID thương hiệu",
+      });
+    }
+    const response = await cateBrandLinkService.getLinksByBrandId(brandId);
+    return res.status(200).json(response);
+  } catch (e) {
+    console.log(e);
+    return res
+      .status(500)
+      .json({ status: "Err", message: "Lỗi hệ thống vui lòng thử lại sau" });
+  }
+};
+
+const getAllLinks = async (req, res) => {
+  try {
+    const response = await cateBrandLinkService.getAllLinks();
+    return res.status(200).json(response);
+  } catch (e) {
+    console.log(e);
+    return res
+      .status(500)
+      .json({ status: "Err", message: "Lỗi hệ thống vui lòng thử lại sau" });
+  }
+};
+
 module.exports = {
   createCateBrandLink,
   getLinksByCategoryId,
+  getLinksByBrandId,
+  getAllLinks,
 };

@@ -7,6 +7,7 @@ const register = async (newUser) => {
   try {
     const checkEmail = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
     const checkPhone = /^(0|\+84)(3|5|7|8|9)\d{8}$/;
+    const checkPass = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{6,}$/;
     if (!checkPhone.test(newUser.phone)) {
       return {
         status: "Err",
@@ -17,6 +18,13 @@ const register = async (newUser) => {
       return {
         status: "Err",
         message: "Vui lòng nhập email đúng định dạng",
+      };
+    }
+    if (!checkPass.test(newUser.password)) {
+      return {
+        status: "Err",
+        message:
+          "Mật khẩu tối thiểu 6 ký tự, bao gồm ít nhất một chữ cái và một số",
       };
     }
     const user = await User.findOne({ where: { email: newUser.email } });
@@ -54,17 +62,18 @@ const register = async (newUser) => {
 const login = async (userData) => {
   try {
     const user = await User.findOne({ where: { email: userData.email } });
-    console.log("User Login: ", user.role_id);
-    const role = await Role.findByPk(user.role_id, {
-      attributes: ["id", "role_name"],
-    });
-    console.log("userData", userData);
+
     if (!user) {
       return {
         status: "Err",
         message: "Email hoặc mật khẩu không đúng",
       };
     }
+
+    const role = await Role.findByPk(user.role_id, {
+      attributes: ["id", "role_name"],
+    });
+
     const isPasswordValid = bcrypt.compareSync(
       userData.password,
       user.password
@@ -89,7 +98,11 @@ const login = async (userData) => {
     return {
       status: "Ok",
       message: "Đăng nhập thành công",
-      data: user,
+      data: {
+        username: user.username,
+        email: user.email,
+        phone: user.phone,
+      },
       access_token,
       refresh_token,
     };

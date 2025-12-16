@@ -1,6 +1,7 @@
 const { deleteFile } = require("../../utils/deleteFile.js");
 const generateSlug = require("../../utils/generateSlug.js");
 const Brand = require("../models/Brand.js");
+const Cate_Brand_Link = require("../models/Cate_Brand_Link.js");
 
 const createBrand = async (newBrand) => {
   try {
@@ -15,7 +16,7 @@ const createBrand = async (newBrand) => {
     const createBrand = await Brand.create({
       name,
       slug,
-      logo: `public/Img/brands/${image}`,
+      logo: `Img/brands/${image}`,
     });
 
     return {
@@ -34,7 +35,8 @@ const createBrand = async (newBrand) => {
 
 const updateBrand = async (brandInfo) => {
   try {
-    const { brandId, name, image } = brandInfo;
+    const { brandId, name, is_active, image } = brandInfo;
+    console.log("image", image);
     const brand = await Brand.findByPk(brandId);
     if (!brand) {
       if (image) {
@@ -49,8 +51,14 @@ const updateBrand = async (brandInfo) => {
       brand.name = name;
       brand.slug = generateSlug(name);
     }
+    if (is_active !== undefined) {
+      brand.is_active = is_active;
+    }
     if (image) {
-      brand.logo = `public/Img/brands/${image}`;
+      if (brand.logo) {
+        deleteFile(`public/${brand.logo}`);
+      }
+      brand.logo = `Img/brands/${image}`;
     }
     await brand.save();
     return {
@@ -88,6 +96,15 @@ const getAllBrands = async () => {
 const deleteBrand = async (brandId) => {
   try {
     const brand = await Brand.findByPk(brandId);
+    const checkLinkBrand = await Cate_Brand_Link.findOne({
+      where: { brand_id: brandId },
+    });
+    if (checkLinkBrand) {
+      return {
+        status: "Err",
+        message: "Không thể xóa thương hiệu đang có sản phẩm liên kết",
+      };
+    }
     if (!brand) {
       return {
         status: "Err",

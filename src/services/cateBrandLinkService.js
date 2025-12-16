@@ -79,7 +79,97 @@ const getLinksByCategoryId = async (categoryId) => {
   }
 };
 
+const getLinksByBrandId = async (brandId) => {
+  try {
+    const checkBrand = await Brand.findByPk(brandId);
+    if (!checkBrand) {
+      return {
+        status: "Err",
+        message: "Thương hiệu không tồn tại",
+      };
+    }
+    const links = await Cate_Brand_Link.findAll({
+      where: { brand_id: brandId },
+      include: [
+        { model: Brand, as: "brand" },
+        {
+          model: Category,
+          as: "category",
+          include: [{ model: Category, as: "children" }],
+        },
+      ],
+      subQuery: false,
+      raw: false,
+    });
+
+    const categories = links.map((link) => link.category.dataValues);
+    const brand = links.length > 0 ? links[0].brand : null;
+
+    const result = {
+      brand: brand,
+      categories: categories,
+    };
+    return {
+      status: "Ok",
+      message: "Lấy liên kết danh mục - thương hiệu thành công",
+      data: result,
+    };
+  } catch (e) {
+    console.log(e);
+    return {
+      status: "Err",
+      message: "Lỗi hệ thống vui lòng thử lại sau",
+    };
+  }
+};
+
+const getAllLinks = async () => {
+  try {
+    const links = await Cate_Brand_Link.findAll({
+      include: [
+        { model: Brand, as: "brand" },
+        {
+          model: Category,
+          as: "category",
+          include: [{ model: Category, as: "children" }],
+        },
+      ],
+      subQuery: false,
+      raw: false,
+    });
+
+    // Gộp theo brand
+    const groupedByBrand = {};
+    links.forEach((link) => {
+      const brandId = link.brand.id;
+      if (!groupedByBrand[brandId]) {
+        groupedByBrand[brandId] = {
+          brand: link.brand,
+          categories: [],
+        };
+      }
+      groupedByBrand[brandId].categories.push(link.category.dataValues);
+    });
+
+    const result = Object.values(groupedByBrand);
+
+    return {
+      status: "Ok",
+      message: "Lấy tất cả liên kết danh mục - thương hiệu thành công",
+      data: result,
+    };
+  } catch (e) {
+    console.log(e);
+    return {
+      status: "Err",
+      message: "Lỗi hệ thống vui lòng thử lại sau",
+    };
+  }
+};
+
 module.exports = {
   createCateBrandLink,
   getLinksByCategoryId,
+  getLinksByBrandId,
+  getAllLinks,
 };

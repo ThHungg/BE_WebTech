@@ -39,7 +39,7 @@ const login = async (req, res) => {
     const response = await userSerivce.login({ email, password });
     const { refresh_token, ...newReponse } = response;
     res.cookie("refresh_token", refresh_token, {
-      httpOnly: true,
+      httpOnly: false,
       secure: process.env.NODE_ENV === "production",
       sameSite: "Strict",
     });

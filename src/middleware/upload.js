@@ -39,7 +39,21 @@ const createUpload = (folder) => {
   });
 };
 
+const makeOptional = (uploadMiddleware) => {
+  return (req, res, next) => {
+    uploadMiddleware(req, res, (err) => {
+      if (err instanceof multer.MulterError) {
+        return next(err);
+      } else if (err) {
+        return next(err);
+      }
+      next();
+    });
+  };
+};
+
 module.exports = {
   uploadBrand: createUpload("brands"),
   uploadProduct: createUpload("products"),
+  makeOptional,
 };

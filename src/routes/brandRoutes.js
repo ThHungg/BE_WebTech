@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const brandController = require("../controllers/brandController");
-const { uploadBrand } = require("../middleware/upload");
+const { uploadBrand, makeOptional } = require("../middleware/upload");
 const {
   authMiddleware,
   roleMddleware,
