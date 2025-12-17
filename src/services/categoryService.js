@@ -1,5 +1,8 @@
 const generateSlug = require("../../utils/generateSlug");
 const Category = require("../models/Category");
+const Cate_Attribute_Link = require("../models/Cate_Attribute_Link");
+const Attribute = require("../models/Attribute");
+const { Op } = require("sequelize");
 const createCategory = async (newCategory) => {
   try {
     const { name, parent_id, icon_emoji } = newCategory;
@@ -40,13 +43,26 @@ const getAllCategories = async () => {
   try {
     const parentCategories = await Category.findAll({
       where: { parent_id: null },
+      include: [
+        {
+          model: Category,
+          as: "children",
+        },
+      ],
+      order: [["id", "ASC"]],
     });
     return {
       status: "Ok",
       message: "Lấy danh mục thành công",
       data: parentCategories,
     };
-  } catch (e) {}
+  } catch (e) {
+    console.log(e);
+    return {
+      status: "Err",
+      message: "Lỗi hệ thống vui lòng thử lại sau",
+    };
+  }
 };
 
 const getCategoryById = async (categoryId) => {
@@ -105,6 +121,39 @@ const getCategoryChildrenById = async (categoryId) => {
   }
 };
 
+const getCategoryParent = async () => {
+  try {
+    const parentCategory = await Category.findAll({
+      where: { parent_id: null },
+      order: [["id", "ASC"]],
+    });
+    return {
+      status: "Ok",
+      message: "Lấy danh mục cha thành công",
+      data: parentCategory,
+    };
+  } catch (e) {
+    return {
+      status: "Err",
+      message: "Lỗi hệ thống vui lòng thử lại sau",
+    };
+  }
+};
+
+const getAllChildren = async () => {
+  try {
+    const childrenCategories = await Category.findAll({
+      where: { parent_id: { [Op.ne]: null } },
+      order: [["id", "ASC"]],
+    });
+    return {
+      status: "Ok",
+      message: "Lấy danh mục con thành công",
+      data: childrenCategories,
+    };
+  } catch (e) {}
+};
+
 const deleteCategory = async (categoryId) => {
   try {
     const category = await Category.findByPk(categoryId);
@@ -114,20 +163,46 @@ const deleteCategory = async (categoryId) => {
         message: "Danh mục không tồn tại",
       };
     }
+
     const children = await Category.findAll({
       where: { parent_id: categoryId },
     });
-    await Promise.all(
-      children.map(async (child) => {
-        await child.destroy();
-      })
-    );
+
+    for (const child of children) {
+      const childAttributeLinks = await Cate_Attribute_Link.findAll({
+        where: { category_id: child.id },
+      });
+      for (const link of childAttributeLinks) {
+        await link.destroy();
+      }
+      await child.destroy();
+    }
+
+    const cateAttributeLinks = await Cate_Attribute_Link.findAll({
+      where: { category_id: categoryId },
+    });
+    for (const link of cateAttributeLinks) {
+      await link.destroy();
+    }
+
+    const allAttributes = await Attribute.findAll();
+    for (const attribute of allAttributes) {
+      const attributeLinksCount = await Cate_Attribute_Link.count({
+        where: { attribute_id: attribute.id },
+      });
+      if (attributeLinksCount === 0) {
+        await attribute.destroy();
+      }
+    }
+
     await category.destroy();
+
     return {
       status: "Ok",
       message: "Xóa danh mục thành công",
     };
   } catch (e) {
+    console.log(e);
     return {
       status: "Err",
       message: "Lỗi hệ thống vui lòng thử lại sau",
@@ -140,5 +215,7 @@ module.exports = {
   getAllCategories,
   getCategoryById,
   getCategoryChildrenById,
+  getCategoryParent,
+  getAllChildren,
   deleteCategory,
 };

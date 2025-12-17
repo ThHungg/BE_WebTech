@@ -5,9 +5,9 @@ const Category = require("../models/Category");
 const Product_Variant = require("../models/Product_Variant");
 const Product_Attribute_Value = require("../models/Product_Attribute_Value");
 const Product_Description_Block = require("../models/Product_Desc_Block");
+const Cart_Item = require("../models/Cart_Item");
 const { sequelize } = require("../config/db");
 const { deleteFile } = require("../../utils/deleteFile");
-const { get } = require("../routes/productRoutes");
 
 const deleteProductFiles = (productImages, descriptionImages) => {
   if (Array.isArray(productImages) && productImages.length > 0) {
@@ -221,6 +221,18 @@ const deleteProduct = async (productId) => {
     deleteProductFiles(productImages, descriptionImages);
 
     if (product.variants.length > 0) {
+      const productVariants = await Product_Variant.findAll({
+        where: { product_id: productId },
+      });
+      for (const vatriant of productVariants) {
+        const cartItems = await Cart_Item.findAll({
+          where: { product_variant_id: vatriant.id },
+        });
+        for (const item of cartItems) {
+          await item.destroy();
+        }
+      }
+
       await Product_Variant.destroy({
         where: { product_id: productId },
       });

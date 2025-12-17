@@ -100,10 +100,7 @@ const deleteBrand = async (brandId) => {
       where: { brand_id: brandId },
     });
     if (checkLinkBrand) {
-      return {
-        status: "Err",
-        message: "Không thể xóa thương hiệu đang có sản phẩm liên kết",
-      };
+      await Cate_Brand_Link.destroy({ where: { brand_id: brandId } });
     }
     if (!brand) {
       return {
@@ -112,7 +109,7 @@ const deleteBrand = async (brandId) => {
       };
     }
     await brand.destroy();
-    deleteFile(brand.dataValues.logo);
+    deleteFile(`public/${brand.logo}`);
     return {
       status: "Ok",
       message: "Xóa thương hiệu thành công",

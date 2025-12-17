@@ -68,6 +68,30 @@ const getCategoryChildrenById = async (req, res) => {
   }
 };
 
+const getCategoryParent = async (req, res) => {
+  try {
+    const response = await categoryService.getCategoryParent();
+    return res.status(200).json(response);
+  } catch (e) {
+    console.log(e);
+    return res
+      .status(500)
+      .json({ status: "Err", message: "Lỗi hệ thống vui lòng thử lại sau" });
+  }
+};
+
+const getAllChildren = async (req, res) => {
+  try {
+    const response = await categoryService.getAllChildren();
+    return res.status(200).json(response);
+  } catch (e) {
+    console.log(e);
+    return res
+      .status(500)
+      .json({ status: "Err", message: "Lỗi hệ thống vui lòng thử lại sau" });
+  }
+};
+
 const deleteCategory = async (req, res) => {
   try {
     const { categoryId } = req.params;
@@ -91,5 +115,7 @@ module.exports = {
   getAllCategories,
   getCategoryById,
   getCategoryChildrenById,
+  getCategoryParent,
+  getAllChildren,
   deleteCategory,
 };

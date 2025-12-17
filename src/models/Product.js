@@ -33,10 +33,10 @@ const Product = sequelize.define(
       type: DataTypes.INTEGER,
       defaultValue: 0,
     },
-    description: {
-      type: DataTypes.TEXT,
-      allowNull: true,
-    },
+    // description: {
+    //   type: DataTypes.TEXT,
+    //   allowNull: true,
+    // },
     is_active: {
       type: DataTypes.BOOLEAN,
       defaultValue: true,

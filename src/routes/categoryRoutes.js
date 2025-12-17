@@ -10,8 +10,8 @@ router.get(
   "/getChildren/:categoryId",
   categoryController.getCategoryChildrenById
 );
-
+router.get("/getAllParent", categoryController.getCategoryParent);
+router.get("/getAllChildren", categoryController.getAllChildren);
 router.delete("/delete/:categoryId", categoryController.deleteCategory);
-
 
 module.exports = router;

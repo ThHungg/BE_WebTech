@@ -88,6 +88,7 @@ const getLinksByBrandId = async (brandId) => {
         message: "Thương hiệu không tồn tại",
       };
     }
+
     const links = await Cate_Brand_Link.findAll({
       where: { brand_id: brandId },
       include: [
@@ -95,20 +96,44 @@ const getLinksByBrandId = async (brandId) => {
         {
           model: Category,
           as: "category",
-          include: [{ model: Category, as: "children" }],
+          include: [{ model: Category, as: "parent" }],
         },
       ],
       subQuery: false,
       raw: false,
     });
 
-    const categories = links.map((link) => link.category.dataValues);
-    const brand = links.length > 0 ? links[0].brand : null;
+    // Tổ chức lại dữ liệu theo cấu trúc Brand -> Parent -> Children
+    const parentMap = {};
+
+    links.forEach((link) => {
+      const category = link.category.dataValues;
+      const parent = category.parent ? category.parent.dataValues : null;
+
+      if (parent) {
+        if (!parentMap[parent.id]) {
+          parentMap[parent.id] = {
+            ...parent,
+            children: [],
+          };
+        }
+        parentMap[parent.id].children.push(category);
+      } else {
+        // Nếu không có parent, thêm trực tiếp vào danh sách cha
+        if (!parentMap[category.id]) {
+          parentMap[category.id] = {
+            ...category,
+            children: [],
+          };
+        }
+      }
+    });
 
     const result = {
-      brand: brand,
-      categories: categories,
+      brand: checkBrand,
+      parents: Object.values(parentMap),
     };
+
     return {
       status: "Ok",
       message: "Lấy liên kết danh mục - thương hiệu thành công",
