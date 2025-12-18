@@ -75,9 +75,31 @@ const getAllLinks = async (req, res) => {
   }
 };
 
+const deleteCateBrandLink = async (req, res) => {
+  try {
+    const { categoryId, brandId } = req.params;
+    if (!categoryId || !brandId) {
+      return res.status(400).json({
+        status: "Err",
+        message: "Vui lòng nhập đầy đủ thông tin",
+      });
+    }
+    const response = await cateBrandLinkService.deleteCateBrandLink({
+      categoryId,
+      brandId,
+    });
+    return res.status(200).json(response);
+  } catch (e) {
+    return res
+      .status(500)
+      .json({ status: "Err", message: "Lỗi hệ thống vui lòng thử lại sau" });
+  }
+};
+
 module.exports = {
   createCateBrandLink,
   getLinksByCategoryId,
   getLinksByBrandId,
   getAllLinks,
+  deleteCateBrandLink,
 };

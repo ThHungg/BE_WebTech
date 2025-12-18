@@ -4,6 +4,7 @@ const categoryController = require("../controllers/categoryController");
 const { route } = require("./brandRoutes");
 
 router.post("/create", categoryController.createCategory);
+router.post("/update/:categoryId", categoryController.updateCategory);
 router.get("/getAll", categoryController.getAllCategories);
 router.get("/get/:categoryId", categoryController.getCategoryById);
 router.get(

@@ -16,6 +16,7 @@ router.post(
   roleMddleware(["User"]),
   userController.updateUser
 );
+router.post("/update/:userId", authMiddleware, userController.updateUserById);
 
 router.get("/getUser", authMiddleware, userController.getUserById);
 router.get(

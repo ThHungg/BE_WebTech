@@ -81,18 +81,56 @@ const updateUser = async (req, res) => {
         message: "Vui lòng nhập ID người dùng",
       });
     }
-    if (!username && !phone && !email && !role) {
-      return res.status(400).json({
-        status: "Err",
-        message: "Vui lòng nhập thông tin cần cập nhật",
-      });
-    }
+    // if (!username && !phone && !email && !role) {
+    //   return res.status(400).json({
+    //     status: "Err",
+    //     message: "Vui lòng nhập thông tin cần cập nhật",
+    //   });
+    // }
     const reponse = await userSerivce.updateUser({
-      id: req.user.id,
       username,
       phone,
       email,
       role,
+    });
+    return res.status(200).json(reponse);
+  } catch (e) {
+    return res
+      .status(500)
+      .json({ status: "Err", message: "Lỗi hệ thống vui lòng thử lại sau" });
+  }
+};
+
+const updateUserById = async (req, res) => {
+  try {
+    const id = req.params.userId;
+    if (!id) {
+      return res.status(400).json({
+        status: "Err",
+        message: "Vui lòng nhập ID người dùng",
+      });
+    }
+    const { username, phone, email, role, is_active } = req.body;
+    console.log("Request User: ", req.user);
+    if (!id) {
+      return res.status(400).json({
+        status: "Err",
+        message: "Vui lòng nhập ID người dùng",
+      });
+    }
+    // if (!username && !phone && !email && !role) {
+    //   return res.status(400).json({
+    //     status: "Err",
+    //     message: "Vui lòng nhập thông tin cần cập nhật",
+    //   });
+    // }
+    const reponse = await userSerivce.updateUserById({
+      id,
+      username,
+      phone,
+      email,
+      role,
+      is_active,
     });
     return res.status(200).json(reponse);
   } catch (e) {
@@ -214,8 +252,14 @@ const getAllUser = async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
+    const search = req.query.search || "";
+    const role = req.query.role || "";
+
     const offset = (page - 1) * limit;
-    const response = await userSerivce.getAllUser(offset, limit);
+    const response = await userSerivce.getAllUser(offset, limit, {
+      search,
+      role,
+    });
 
     return res.status(200).json(response);
   } catch (e) {
@@ -229,6 +273,7 @@ module.exports = {
   login,
   refreshToken,
   updateUser,
+  updateUserById,
   getUserById,
   addAddress,
   updateAddress,

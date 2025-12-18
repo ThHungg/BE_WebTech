@@ -1,6 +1,7 @@
 const generateSlug = require("../../utils/generateSlug");
 const Category = require("../models/Category");
 const Cate_Attribute_Link = require("../models/Cate_Attribute_Link");
+const Cate_Brand_Link = require("../models/Cate_Brand_Link"); // ← THÊM DÒNG NÀY
 const Attribute = require("../models/Attribute");
 const { Op } = require("sequelize");
 const createCategory = async (newCategory) => {
@@ -31,6 +32,49 @@ const createCategory = async (newCategory) => {
       slug,
     });
     return category;
+  } catch (e) {
+    return {
+      status: "Err",
+      message: "Lỗi hệ thống vui lòng thử lại sau",
+    };
+  }
+};
+
+const updateCategory = async (categoryInfo) => {
+  try {
+    const { categoryId, name, parent_id, icon_emoji } = categoryInfo;
+    const category = await Category.findByPk(categoryId);
+    if (!category) {
+      return {
+        status: "Err",
+        message: "Danh mục không tồn tại",
+      };
+    }
+    if (name) {
+      category.name = name;
+      category.slug = generateSlug(name);
+    }
+    if (parent_id !== undefined) {
+      if (parent_id) {
+        const checkParent = await Category.findByPk(parent_id);
+        if (!checkParent) {
+          return {
+            status: "Err",
+            message: "Danh mục cha không tồn tại",
+          };
+        }
+      }
+      category.parent_id = parent_id;
+    }
+    if (icon_emoji !== undefined) {
+      category.icon_emoji = icon_emoji;
+    }
+    await category.save();
+    return {
+      status: "Ok",
+      message: "Cập nhật danh mục thành công",
+      data: category,
+    };
   } catch (e) {
     return {
       status: "Err",
@@ -169,6 +213,11 @@ const deleteCategory = async (categoryId) => {
     });
 
     for (const child of children) {
+      // ← THÊM: Xóa Cate_Brand_Link của danh mục con
+      await Cate_Brand_Link.destroy({
+        where: { category_id: child.id },
+      });
+
       const childAttributeLinks = await Cate_Attribute_Link.findAll({
         where: { category_id: child.id },
       });
@@ -177,6 +226,10 @@ const deleteCategory = async (categoryId) => {
       }
       await child.destroy();
     }
+
+    await Cate_Brand_Link.destroy({
+      where: { category_id: categoryId },
+    });
 
     const cateAttributeLinks = await Cate_Attribute_Link.findAll({
       where: { category_id: categoryId },
@@ -212,6 +265,7 @@ const deleteCategory = async (categoryId) => {
 
 module.exports = {
   createCategory,
+  updateCategory,
   getAllCategories,
   getCategoryById,
   getCategoryChildrenById,

@@ -12,6 +12,15 @@ router.post(
   productController.createProduct
 );
 
+router.post(
+  "/update/:productId",
+  uploadProduct.fields([
+    { name: "productImages", maxCount: 10 },
+    { name: "descriptionImages", maxCount: 10 },
+  ]),
+  productController.updateProduct
+);
+
 router.get("/detail/:productId", productController.getProductDetail);
 
 router.delete("/delete/:productId", productController.deleteProduct);

@@ -62,11 +62,11 @@ Cate_Attribute_Link.belongsTo(Attribute, {
 });
 
 // Product <-> Brand (N:1)
-Product.belongsTo(Brand, { foreignKey: "brand_id" });
+Product.belongsTo(Brand, { foreignKey: "brand_id", as: "brand" });
 Brand.hasMany(Product, { foreignKey: "brand_id" });
 
 // Product <-> Category (N:1)
-Product.belongsTo(Category, { foreignKey: "category_id" });
+Product.belongsTo(Category, { foreignKey: "category_id", as: "category" });
 Category.hasMany(Product, { foreignKey: "category_id" });
 
 // Product - Product_Variant: Một sản phẩm (Product) có nhiều biến thể (Product_Variant)

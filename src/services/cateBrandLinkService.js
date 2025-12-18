@@ -103,7 +103,6 @@ const getLinksByBrandId = async (brandId) => {
       raw: false,
     });
 
-    // Tổ chức lại dữ liệu theo cấu trúc Brand -> Parent -> Children
     const parentMap = {};
 
     links.forEach((link) => {
@@ -119,7 +118,6 @@ const getLinksByBrandId = async (brandId) => {
         }
         parentMap[parent.id].children.push(category);
       } else {
-        // Nếu không có parent, thêm trực tiếp vào danh sách cha
         if (!parentMap[category.id]) {
           parentMap[category.id] = {
             ...category,
@@ -163,7 +161,6 @@ const getAllLinks = async () => {
       raw: false,
     });
 
-    // Gộp theo brand
     const groupedByBrand = {};
     links.forEach((link) => {
       const brandId = link.brand.id;
@@ -192,9 +189,37 @@ const getAllLinks = async () => {
   }
 };
 
+const deleteCateBrandLink = async (params) => {
+  try {
+    const { categoryId, brandId } = params;
+    const link = await Cate_Brand_Link.findOne({
+      where: { category_id: categoryId, brand_id: brandId },
+    });
+
+    if (!link) {
+      return {
+        status: "Err",
+        message: "Liên kết danh mục - thương hiệu không tồn tại",
+      };
+    }
+    await link.destroy();
+    return {
+      status: "Ok",
+      message: "Xóa liên kết danh mục - thương hiệu thành công",
+    };
+  } catch (e) {
+    console.log(e);
+    return {
+      status: "Err",
+      message: "Lỗi hệ thống vui lòng thử lại sau",
+    };
+  }
+};
+
 module.exports = {
   createCateBrandLink,
   getLinksByCategoryId,
   getLinksByBrandId,
   getAllLinks,
+  deleteCateBrandLink,
 };

@@ -3,6 +3,7 @@ const User = require("../models/User");
 const bcrypt = require("bcryptjs");
 const { generateAccessToken, generateRefreshToken } = require("./jwtService");
 const Address = require("../models/Address");
+const { Op } = require("sequelize");
 const register = async (newUser) => {
   try {
     const checkEmail = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
@@ -118,6 +119,7 @@ const login = async (userData) => {
 const updateUser = async (dataUpdate) => {
   try {
     const { id, username, phone, email, role } = dataUpdate;
+    console.log("dataUpdate", dataUpdate);
     console.log("Update User ID: ", role);
     const user = await User.findByPk(id);
     if (!user) {
@@ -135,8 +137,50 @@ const updateUser = async (dataUpdate) => {
         user.role_id = roleData.id;
       }
     }
+
     if (username) user.username = username;
     if (phone) user.phone = phone;
+
+    await user.save();
+    return {
+      status: "Ok",
+      message: "Cập nhật thông tin thành công",
+      data: user,
+    };
+  } catch (e) {
+    console.log(e);
+    return {
+      status: "Err",
+      message: "Lỗi hệ thống vui lòng thử lại sau",
+    };
+  }
+};
+
+const updateUserById = async (dataUpdate) => {
+  try {
+    const { id, username, phone, email, role, is_active } = dataUpdate;
+
+    const user = await User.findByPk(id);
+    if (!user) {
+      return {
+        status: "Err",
+        message: "Người dùng không tồn tại",
+      };
+    }
+
+    if (role) {
+      const roleData = await Role.findByPk(role, {
+        attributes: ["id", "role_name"],
+      });
+      if (roleData && user.role_id !== roleData.id) {
+        user.role_id = roleData.id;
+      }
+    }
+
+    if (username) user.username = username;
+    if (phone) user.phone = phone;
+    if (email) user.email = email;
+    if (is_active !== undefined) user.is_active = is_active;
 
     await user.save();
     return {
@@ -190,43 +234,80 @@ const getUserById = async (id) => {
   }
 };
 
-const getAllUser = async (offset, limit) => {
+const getAllUser = async (offset, limit, filters = {}) => {
   try {
-    const user = await User.findAll({
+    const { search = "", is_active, role } = filters;
+
+    // Xây dựng điều kiện WHERE
+    const whereConditions = {};
+
+    // Lọc theo trạng thái hoạt động
+    if (is_active !== undefined) {
+      whereConditions.is_active = is_active === "true" || is_active === true;
+    }
+
+    // Tìm kiếm theo username, email, phone
+    if (search) {
+      const { Op } = require("sequelize");
+      whereConditions[Op.or] = [
+        { username: { [Op.like]: `%${search}%` } },
+        { email: { [Op.like]: `%${search}%` } },
+        { phone: { [Op.like]: `%${search}%` } },
+      ];
+    }
+
+    // Lọc theo role
+    const includeOptions = [
+      {
+        model: Role,
+        as: "role",
+        attributes: ["role_name"],
+      },
+      {
+        model: Address,
+        as: "addresses",
+        attributes: [
+          "id",
+          "city",
+          "district",
+          "ward",
+          "street_address",
+          "is_default",
+        ],
+        order: [["is_default", "DESC"]],
+      },
+    ];
+
+    // Thêm điều kiện lọc role nếu có
+    if (role) {
+      includeOptions[0].where = { role_name: role };
+      includeOptions[0].required = true; // INNER JOIN để chỉ lấy user có role phù hợp
+    }
+
+    const users = await User.findAll({
+      where: whereConditions,
       offset: offset,
       limit: limit,
       attributes: {
         exclude: ["password"],
       },
-      include: [
-        {
-          model: Role,
-          as: "role",
-          attributes: ["role_name"],
-        },
-        {
-          model: Address,
-          as: "addresses",
-          attributes: [
-            "id",
-            "city",
-            "district",
-            "ward",
-            "street_address",
-            "is_default",
-          ],
-          order: [["is_default", "DESC"]],
-        },
-      ],
+      include: includeOptions,
     });
+
+    // Lấy tổng số user phù hợp với filter
+    const total = await User.count({
+      where: whereConditions,
+      include: includeOptions,
+    });
+
     return {
       status: "Ok",
       message: "Lấy danh sách người dùng thành công",
-      data: user,
+      data: users,
       pagination: {
         offset,
         limit,
-        total: await User.count(),
+        total,
       },
     };
   } catch (e) {
@@ -344,6 +425,7 @@ module.exports = {
   register,
   login,
   updateUser,
+  updateUserById,
   getUserById,
   addAddress,
   updateAddress,
