@@ -75,6 +75,49 @@ const getAllLinks = async (req, res) => {
   }
 };
 
+const getParentCategoriesByBrandId = async (req, res) => {
+  try {
+    const { brandId } = req.params;
+    if (!brandId) {
+      return res.status(400).json({
+        status: "Err",
+        message: "Vui lòng nhập ID thương hiệu",
+      });
+    }
+    const response = await cateBrandLinkService.getParentCategoriesByBrandId(
+      brandId
+    );
+    return res.status(200).json(response);
+  } catch (e) {
+    console.log(e);
+    return res
+      .status(500)
+      .json({ status: "Err", message: "Lỗi hệ thống vui lòng thử lại sau" });
+  }
+};
+
+const getChildCategoriesByParentId = async (req, res) => {
+  try {
+    const { parentId, brandId } = req.params;
+    if (!parentId || !brandId) {
+      return res.status(400).json({
+        status: "Err",
+        message: "Vui lòng nhập đầy đủ thông tin",
+      });
+    }
+    const response = await cateBrandLinkService.getChildCategoriesByParentId(
+      parentId,
+      brandId
+    );
+    return res.status(200).json(response);
+  } catch (e) {
+    console.log(e);
+    return res
+      .status(500)
+      .json({ status: "Err", message: "Lỗi hệ thống vui lòng thử lại sau" });
+  }
+};
+
 const deleteCateBrandLink = async (req, res) => {
   try {
     const { categoryId, brandId } = req.params;
@@ -100,6 +143,8 @@ module.exports = {
   createCateBrandLink,
   getLinksByCategoryId,
   getLinksByBrandId,
+  getParentCategoriesByBrandId,
+  getChildCategoriesByParentId,
   getAllLinks,
   deleteCateBrandLink,
 };

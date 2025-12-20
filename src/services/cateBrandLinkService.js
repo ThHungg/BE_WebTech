@@ -189,6 +189,90 @@ const getAllLinks = async () => {
   }
 };
 
+const getParentCategoriesByBrandId = async (brandId) => {
+  try {
+    const checkBrand = await Brand.findByPk(brandId);
+    if (!checkBrand) {
+      return {
+        status: "Err",
+        message: "Thương hiệu không tồn tại",
+      };
+    }
+    const links = await Cate_Brand_Link.findAll({
+      where: { brand_id: brandId },
+      include: [
+        {
+          model: Category,
+          as: "category",
+          include: [{ model: Category, as: "parent" }],
+        },
+      ],
+      subQuery: false,
+      raw: false,
+    });
+
+    const parentMap = {};
+
+    links.forEach((link) => {
+      const parent = link.category.dataValues.parent;
+      if (parent && !parentMap[parent.id]) {
+        parentMap[parent.id] = {
+          id: parent.id,
+          name: parent.name,
+        };
+      }
+    });
+    const result = Object.values(parentMap);
+    return {
+      status: "Ok",
+      message: "Lấy danh mục cha theo thương hiệu thành công",
+      data: result,
+    };
+  } catch (e) {
+    console.log(e);
+    return {
+      status: "Err",
+      message: "Lỗi hệ thống vui lòng thử lại sau",
+    };
+  }
+};
+
+const getChildCategoriesByParentId = async (parentId, brandId) => {
+  try {
+    const checkBrand = await Brand.findByPk(brandId);
+    if (!checkBrand) {
+      return {
+        status: "Err",
+        message: "Thương hiệu không tồn tại",
+      };
+    }
+    const links = await Cate_Brand_Link.findAll({
+      where: { brand_id: brandId },
+      include: [
+        {
+          model: Category,
+          as: "category",
+          where: { parent_id: parentId },
+        },
+      ],
+      subQuery: false,
+      raw: false,
+    });
+    const result = links.map((link) => link.category);
+    return {
+      status: "Ok",
+      message: "Lấy danh mục con theo danh mục cha và thương hiệu thành công",
+      data: result,
+    };
+  } catch (e) {
+    console.log(e);
+    return {
+      status: "Err",
+      message: "Lỗi hệ thống vui lòng thử lại sau",
+    };
+  }
+};
+
 const deleteCateBrandLink = async (params) => {
   try {
     const { categoryId, brandId } = params;
@@ -220,6 +304,8 @@ module.exports = {
   createCateBrandLink,
   getLinksByCategoryId,
   getLinksByBrandId,
+  getParentCategoriesByBrandId,
+  getChildCategoriesByParentId,
   getAllLinks,
   deleteCateBrandLink,
 };

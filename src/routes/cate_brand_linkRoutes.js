@@ -15,6 +15,14 @@ router.delete(
 );
 
 router.get("/getByBrand/:brandId", cateBrandLinkController.getLinksByBrandId);
+router.get(
+  "/getParentByBrand/:brandId",
+  cateBrandLinkController.getParentCategoriesByBrandId
+);
+router.get(
+  "/getChildByParent/:parentId/:brandId",
+  cateBrandLinkController.getChildCategoriesByParentId
+);
 router.get("/getAll", cateBrandLinkController.getAllLinks);
 
 module.exports = router;

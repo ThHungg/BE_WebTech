@@ -11,7 +11,6 @@ const Product = require("./Product.js");
 const Product_Variant = require("./Product_Variant.js");
 const Img_Product = require("./Img_Product.js");
 const Product_Attribute_Value = require("./Product_Attribute_Value.js");
-const Product_Description_Block = require("./Product_Desc_Block.js");
 
 // Role - User: Một vai trò (Role) có nhiều người dùng (User)
 Role.hasMany(User, { foreignKey: "role_id", as: "users" });
@@ -104,15 +103,6 @@ Product_Attribute_Value.belongsTo(Product, {
   foreignKey: "product_id",
 });
 
-// Product - Product_Description_Block
-Product.hasMany(Product_Description_Block, {
-  foreignKey: "product_id",
-  as: "descriptionBlocks",
-});
-Product_Description_Block.belongsTo(Product, {
-  foreignKey: "product_id",
-});
-
 module.exports = {
   Role,
   User,
@@ -125,7 +115,6 @@ module.exports = {
   Product_Variant,
   Img_Product,
   Product_Attribute_Value,
-  Product_Description_Block,
   Unit,
   Attribute,
 };

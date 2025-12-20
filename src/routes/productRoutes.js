@@ -5,19 +5,13 @@ const { uploadProduct } = require("../middleware/upload");
 
 router.post(
   "/create",
-  uploadProduct.fields([
-    { name: "productImages", maxCount: 10 },
-    { name: "descriptionImages", maxCount: 10 },
-  ]),
+  uploadProduct.fields([{ name: "productImages", maxCount: 10 }]),
   productController.createProduct
 );
 
 router.post(
   "/update/:productId",
-  uploadProduct.fields([
-    { name: "productImages", maxCount: 10 },
-    { name: "descriptionImages", maxCount: 10 },
-  ]),
+  uploadProduct.fields([{ name: "productImages", maxCount: 10 }]),
   productController.updateProduct
 );
 

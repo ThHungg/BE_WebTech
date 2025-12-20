@@ -1,18 +1,11 @@
 const { deleteFile } = require("../../utils/deleteFile");
 const productService = require("../services/productService");
 
-const deleteProductFiles = (productImages, descriptionImages) => {
+const deleteProductFiles = (productImages) => {
   if (Array.isArray(productImages) && productImages.length > 0) {
     productImages.forEach((imgPath) => {
       if (imgPath) {
-        deleteFile(imgPath);
-      }
-    });
-  }
-  if (Array.isArray(descriptionImages) && descriptionImages.length > 0) {
-    descriptionImages.forEach((imgPath) => {
-      if (imgPath) {
-        deleteFile(imgPath);
+        deleteFile(`public/Img/products/${imgPath}`);
       }
     });
   }
@@ -22,15 +15,9 @@ const createProduct = async (req, res) => {
   try {
     const newProduct = req.body;
     const productImages = req.files?.productImages;
-    const descriptionImages = req.files?.descriptionImages;
 
-    // console.log("uploadedFiles", uploadedFiles);
-
-    const imagePaths = productImages.map((file) => file.path);
+    const imagePaths = productImages.map((file) => file.filename);
     newProduct.images = imagePaths;
-
-    const imageDescPaths = descriptionImages.map((file) => file.path);
-    newProduct.description_images = imageDescPaths;
 
     if (
       !newProduct.name ||
@@ -38,7 +25,7 @@ const createProduct = async (req, res) => {
       !newProduct.brand_id ||
       !newProduct.category_id
     ) {
-      deleteProductFiles(productImages, descriptionImages);
+      deleteProductFiles(imagePaths);
       return res.status(400).json({
         status: "Err",
         message: "Vui lòng nhập đầy đủ thông tin",
@@ -46,7 +33,7 @@ const createProduct = async (req, res) => {
     }
 
     if (!productImages || productImages.length === 0) {
-      deleteProductFiles([], descriptionImages);
+      deleteProductFiles(imagePaths);
       return res.status(400).json({
         status: "Err",
         message: "Vui lòng upload ít nhất 1 ảnh sản phẩm",
@@ -58,7 +45,7 @@ const createProduct = async (req, res) => {
   } catch (e) {
     console.log(e);
     // deleteFile(req.files);
-    deleteProductFiles(productImages, descriptionImages);
+    deleteProductFiles(imagePaths);
     return res
       .status(500)
       .json({ status: "Err", message: "Lỗi hệ thống vui lòng thử lại sau" });
@@ -70,16 +57,11 @@ const updateProduct = async (req, res) => {
     const { productId } = req.params;
     const updatedProduct = req.body;
     const productImages = req.files?.productImages;
-    const descriptionImages = req.files?.descriptionImages;
-    
+
     const imagePaths = productImages
       ? productImages.map((file) => file.path)
       : [];
     updatedProduct.images = imagePaths;
-    const imageDescPaths = descriptionImages
-      ? descriptionImages.map((file) => file.path)
-      : [];
-    updatedProduct.description_images = imageDescPaths;
 
     const response = await productService.updateProduct({
       productId,
@@ -88,7 +70,7 @@ const updateProduct = async (req, res) => {
     return res.status(200).json(response);
   } catch (e) {
     console.log(e);
-    deleteProductFiles(productImages, descriptionImages);
+    deleteProductFiles(productImages);
     return res
       .status(500)
       .json({ status: "Err", message: "Lỗi hệ thống vui lòng thử lại sau" });

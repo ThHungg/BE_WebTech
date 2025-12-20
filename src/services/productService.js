@@ -4,24 +4,16 @@ const Brand = require("../models/Brand");
 const Category = require("../models/Category");
 const Product_Variant = require("../models/Product_Variant");
 const Product_Attribute_Value = require("../models/Product_Attribute_Value");
-const Product_Description_Block = require("../models/Product_Desc_Block");
 const Cart_Item = require("../models/Cart_Item");
 const { sequelize } = require("../config/db");
 const { deleteFile } = require("../../utils/deleteFile");
 const { Attribute, Cate_Attribute_Link } = require("../models");
 
-const deleteProductFiles = (productImages, descriptionImages) => {
+const deleteProductFiles = (productImages) => {
   if (Array.isArray(productImages) && productImages.length > 0) {
     productImages.forEach((imgPath) => {
       if (imgPath) {
-        deleteFile(imgPath);
-      }
-    });
-  }
-  if (Array.isArray(descriptionImages) && descriptionImages.length > 0) {
-    descriptionImages.forEach((imgPath) => {
-      if (imgPath) {
-        deleteFile(imgPath);
+        deleteFile(`public/Img/products/${imgPath}`);
       }
     });
   }
@@ -35,29 +27,15 @@ const createProduct = async (newProduct) => {
     variants,
     images,
     is_active,
-    description_images,
-    description_data,
     ...productData
   } = newProduct;
-
-  console.log("description_data", attributes);
+  console.log("images", images);
 
   if (typeof variants === "string") {
     variants = JSON.parse(variants);
   }
   if (typeof attributes === "string") {
     attributes = JSON.parse(attributes);
-  }
-  let description_blocks = [];
-  if (typeof description_data === "string") {
-    description_blocks = JSON.parse(description_data);
-  }
-
-  if (Array.isArray(description_images) && description_images.length > 0) {
-    description_blocks = description_blocks.map((block, index) => ({
-      ...block,
-      img_content: description_images[index] || null,
-    }));
   }
 
   brand_id = parseInt(brand_id);
@@ -68,7 +46,7 @@ const createProduct = async (newProduct) => {
   try {
     const checkBrand = await Brand.findByPk(brand_id);
     if (!checkBrand) {
-      deleteProductFiles(images, description_images);
+      deleteProductFiles(images);
       return {
         status: "Err",
         message: "Thương hiệu không tồn tại",
@@ -77,7 +55,7 @@ const createProduct = async (newProduct) => {
 
     const checkCategory = await Category.findByPk(category_id);
     if (!checkCategory) {
-      deleteProductFiles(images, description_images);
+      deleteProductFiles(images);
       return {
         status: "Err",
         message: "Danh mục không tồn tại",
@@ -97,28 +75,11 @@ const createProduct = async (newProduct) => {
 
     const productImages = images.map((imgPath) => ({
       product_id: prodcutId,
-      image: imgPath,
+      image: `Img/products/${imgPath}`,
     }));
     const createdImages = await Img_Product.bulkCreate(productImages, {
       transaction: t,
     });
-
-    let createdBlocks = null;
-    if (description_blocks.length > 0) {
-      const blocksToCreate = description_blocks.map((block, index) => ({
-        product_id: prodcutId,
-        sort_order: index,
-        content: block.content || null,
-        img_content: block.img_content || null,
-        caption_img: block.caption_img || null,
-      }));
-      createdBlocks = await Product_Description_Block.bulkCreate(
-        blocksToCreate,
-        {
-          transaction: t,
-        }
-      );
-    }
 
     const attributeValues = [];
     if (Array.isArray(attributes)) {
@@ -187,12 +148,11 @@ const createProduct = async (newProduct) => {
         images: createdImages,
         attributes: createAttributes,
         variants: createdVariants,
-        descriptionBlocks: createdBlocks,
       },
     };
   } catch (e) {
     console.log(e);
-    deleteProductFiles(images, description_images);
+    deleteProductFiles(images);
     return {
       status: "Err",
       message: "Lỗi hệ thống, vui lòng thử lại sau",
@@ -209,8 +169,6 @@ const updateProduct = async (productInfo) => {
     variants,
     images,
     is_active,
-    description_images,
-    description_data,
     ...productData
   } = updatedProduct;
 
@@ -219,17 +177,6 @@ const updateProduct = async (productInfo) => {
   }
   if (typeof attributes === "string" && attributes) {
     attributes = JSON.parse(attributes);
-  }
-  let description_blocks = [];
-  if (typeof description_data === "string" && description_data) {
-    description_blocks = JSON.parse(description_data);
-  }
-
-  if (Array.isArray(description_images) && description_images.length > 0) {
-    description_blocks = description_blocks.map((block, index) => ({
-      ...block,
-      img_content: description_images[index] || null,
-    }));
   }
 
   brand_id = parseInt(brand_id);
@@ -245,9 +192,31 @@ const updateProduct = async (productInfo) => {
         message: "Sản phẩm không tồn tại",
       };
     }
+    console.log("images", images);
+    if (images && images.length > 0) {
+      const oldImages = await Img_Product.findAll({
+        where: { product_id: productId },
+        transaction: t,
+      });
+      for (const img of oldImages) {
+        deleteFile(img.image);
+      }
+      await Img_Product.destroy({
+        where: { product_id: productId },
+        transaction: t,
+      });
+
+      const newProductImages = images.map((imgPath) => ({
+        product_id: productId,
+        image: imgPath,
+      }));
+      await Img_Product.bulkCreate(newProductImages, { transaction: t });
+    }
     // console.log(variants);
     const updateData = {};
     if (productData.name) updateData.name = productData.name;
+    if (productData.description)
+      updateData.description = productData.description;
     if (productData.total_stock)
       updateData.total_stock = productData.total_stock;
 
@@ -268,6 +237,7 @@ const updateProduct = async (productInfo) => {
     ) {
       const checkCategory = await Category.findByPk(category_id);
       if (!checkCategory) {
+        // deleteFile(imgPath);
         return {
           status: "Err",
           message: "Danh mục không tồn tại",
@@ -279,17 +249,49 @@ const updateProduct = async (productInfo) => {
       updateData.is_active = is_active === "true" || is_active === true;
     }
 
+    console.log("attributes", attributes);
+
     if (Array.isArray(attributes) && attributes.length > 0) {
       for (const attr of attributes) {
-        if (attr.attribute_value_id) {
-          const checkAttrValue = await Product_Attribute_Value.findByPk(
-            attr.attribute_value_id
-          );
-          if (checkAttrValue) {
-            if (attr.value) {
-              checkAttrValue.value = attr.value;
-              await checkAttrValue.save({ transaction: t });
-            }
+        let attributeId = attr.attribute_id;
+
+        if (!attributeId && attr.name) {
+          const [newAttr] = await Attribute.findOrCreate({
+            where: { name: attr.name },
+            defaults: { name: attr.name },
+            transaction: t,
+          });
+          attributeId = newAttr.id;
+        }
+
+        await Cate_Attribute_Link.findOrCreate({
+          where: {
+            category_id: product.category_id,
+            attribute_id: attributeId,
+          },
+          defaults: {
+            category_id: product.category_id,
+            attribute_id: attributeId,
+          },
+          transaction: t,
+        });
+        if (attributeId) {
+          const checkValue = await Product_Attribute_Value.findOne({
+            where: { product_id: productId, attribute_id: attributeId },
+            transaction: t,
+          });
+          if (checkValue) {
+            checkValue.value = attr.value;
+            await checkValue.save({ transaction: t });
+          } else {
+            await Product_Attribute_Value.create(
+              {
+                product_id: productId,
+                attribute_id: attributeId,
+                value: attr.value,
+              },
+              { transaction: t }
+            );
           }
         }
       }
@@ -348,7 +350,7 @@ const updateProduct = async (productInfo) => {
     return {
       status: "Ok",
       message: "Cập nhật sản phẩm thành công",
-      data: product,
+      // data: product,
     };
   } catch (e) {
     console.log(e);
@@ -371,7 +373,6 @@ const getProductDetail = async (productId) => {
           association: "attributes",
           through: { attributes: [] },
         },
-        { association: "descriptionBlocks" },
       ],
     });
     if (!product) {
@@ -399,7 +400,6 @@ const deleteProduct = async (productId) => {
     const product = await Product.findByPk(productId, {
       include: [
         { association: "images" },
-        { association: "descriptionBlocks" },
         { association: "variants" },
         { association: "attributeValues" },
       ],
@@ -412,10 +412,7 @@ const deleteProduct = async (productId) => {
     }
 
     const productImages = product.images.map((img) => img.image);
-    const descriptionImages = product.descriptionBlocks.map(
-      (block) => block.img_content
-    );
-    deleteProductFiles(productImages, descriptionImages);
+    deleteProductFiles(productImages);
 
     if (product.variants.length > 0) {
       const productVariants = await Product_Variant.findAll({
@@ -437,12 +434,6 @@ const deleteProduct = async (productId) => {
 
     if (product.attributeValues.length > 0) {
       await Product_Attribute_Value.destroy({
-        where: { product_id: productId },
-      });
-    }
-
-    if (product.descriptionBlocks.length > 0) {
-      await Product_Description_Block.destroy({
         where: { product_id: productId },
       });
     }
