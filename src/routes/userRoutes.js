@@ -17,7 +17,7 @@ router.post(
   userController.updateUser
 );
 router.post("/update/:userId", authMiddleware, userController.updateUserById);
-
+router.post("/change-password", authMiddleware, userController.changePassword);
 router.get("/getUser", authMiddleware, userController.getUserById);
 router.get(
   "/getAll",
@@ -33,6 +33,8 @@ router.delete(
   userController.deleteUser
 );
 
+router.post("/logout", userController.logout);
+
 //Address
 router.post("/address", authMiddleware, userController.addAddress);
 router.post(
@@ -40,4 +42,5 @@ router.post(
   authMiddleware,
   userController.updateAddress
 );
+
 module.exports = router;

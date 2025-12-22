@@ -50,7 +50,28 @@ const getLinksByCategoryId = async (req, res) => {
   }
 };
 
+const deleteCateAttributeLink = async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (!id) {
+      return res.status(400).json({
+        status: "Err",
+        message: "Vui lòng cung cấp id",
+      });
+    }
+
+    const response = await cateAttributeLinkService.deleteCateAttributeLink(id);
+    return res.status(200).json(response);
+  } catch (e) {
+    console.log(e);
+    return res
+      .status(500)
+      .json({ status: "Err", message: "Lỗi hệ thống vui lòng thử lại sau" });
+  }
+};
+
 module.exports = {
   createCateAttributeLink,
   getLinksByCategoryId,
+  deleteCateAttributeLink,
 };

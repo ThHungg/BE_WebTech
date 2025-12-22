@@ -18,10 +18,10 @@ const createProduct = async (req, res) => {
 
     const imagePaths = productImages.map((file) => file.filename);
     newProduct.images = imagePaths;
-
+    console.log(newProduct);
     if (
       !newProduct.name ||
-      !newProduct.total_stock ||
+      // !newProduct.total_stock ||
       !newProduct.brand_id ||
       !newProduct.category_id
     ) {
@@ -97,6 +97,18 @@ const getProductDetail = async (req, res) => {
   }
 };
 
+const getAllProducts = async (req, res) => {
+  try {
+    const response = await productService.getAllProducts();
+    return res.status(200).json(response);
+  } catch (e) {
+    console.log(e);
+    return res
+      .status(500)
+      .json({ status: "Err", message: "Lỗi hệ thống vui lòng thử lại sau" });
+  }
+};
+
 const deleteProduct = async (req, res) => {
   try {
     const { productId } = req.params;
@@ -121,4 +133,5 @@ module.exports = {
   updateProduct,
   deleteProduct,
   getProductDetail,
+  getAllProducts,
 };

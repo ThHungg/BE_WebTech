@@ -116,6 +116,39 @@ const login = async (userData) => {
   }
 };
 
+const changePassword = async (data) => {
+  try {
+    const { id, oldPassword, newPassword } = data;
+    const user = await User.findByPk(id);
+    if (!user) {
+      return {
+        status: "Err",
+        message: "Người dùng không tồn tại",
+      };
+    }
+    const isPasswordValid = bcrypt.compareSync(oldPassword, user.password);
+    if (!isPasswordValid) {
+      return {
+        status: "Err",
+        message: "Mật khẩu cũ không đúng",
+      };
+    }
+    const hash = bcrypt.hashSync(newPassword, 10);
+    user.password = hash;
+    await user.save();
+    return {
+      status: "Ok",
+      message: "Đổi mật khẩu thành công",
+    };
+  } catch (e) {
+    console.log(e);
+    return {
+      status: "Err",
+      message: "Lỗi hệ thống vui lòng thử lại sau",
+    };
+  }
+};
+
 const updateUser = async (dataUpdate) => {
   try {
     const { id, username, phone, email, role } = dataUpdate;
@@ -424,6 +457,7 @@ const updateAddress = async (addressId, address) => {
 module.exports = {
   register,
   login,
+  changePassword,
   updateUser,
   updateUserById,
   getUserById,

@@ -11,6 +11,8 @@ const Product = require("./Product.js");
 const Product_Variant = require("./Product_Variant.js");
 const Img_Product = require("./Img_Product.js");
 const Product_Attribute_Value = require("./Product_Attribute_Value.js");
+const Cart = require("./Cart.js");
+const Cart_Item = require("./Cart_Item.js");
 
 // Role - User: Một vai trò (Role) có nhiều người dùng (User)
 Role.hasMany(User, { foreignKey: "role_id", as: "users" });
@@ -101,6 +103,24 @@ Product.hasMany(Product_Attribute_Value, {
 });
 Product_Attribute_Value.belongsTo(Product, {
   foreignKey: "product_id",
+});
+
+// User - Cart: Một User có một Giỏ hàng (1:1)
+User.hasOne(Cart, { foreignKey: "user_id", as: "cart" });
+Cart.belongsTo(User, { foreignKey: "user_id", as: "user" });
+
+// Cart - Cart_Item: Một Giỏ hàng có nhiều mặt hàng (1:N)
+Cart.hasMany(Cart_Item, { foreignKey: "cart_id", as: "items" });
+Cart_Item.belongsTo(Cart, { foreignKey: "cart_id", as: "cart" });
+
+// Product_Variant - Cart_Item: Một biến thể sản phẩm có thể nằm trong nhiều giỏ hàng (1:N)
+Product_Variant.hasMany(Cart_Item, {
+  foreignKey: "product_variant_id",
+  as: "cartItems",
+});
+Cart_Item.belongsTo(Product_Variant, {
+  foreignKey: "product_variant_id",
+  as: "variant",
 });
 
 module.exports = {

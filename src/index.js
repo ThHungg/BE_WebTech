@@ -16,16 +16,12 @@ app.use(cookieParser());
 app.use(express.static("public"));
 app.use(
   cors({
-    origin: "http://localhost:3000",
+    origin: ["http://localhost:3000", "http://localhost:3002"],
     credentials: true,
     withCredentials: true,
   })
 );
 routes(app);
-
-app.get("/", (req, res) => {
-  res.send("Hello, World!");
-});
 
 app.listen(PORT, () => {
   connectDB();

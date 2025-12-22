@@ -31,6 +31,13 @@ CREATE TABLE User (
     FOREIGN KEY (role_id) REFERENCES Role(id)
 );
 
+ALTER TABLE User
+ADD COLUMN is_active BOOLEAN DEFAULT TRUE;
+
+ALTER TABLE User DROP INDEX username;
+ALTER TABLE User DROP INDEX phone;
+
+
 -- 3. Address
 CREATE TABLE Address (
     id INT PRIMARY KEY AUTO_INCREMENT,
@@ -54,6 +61,10 @@ CREATE TABLE Brand (
     slug VARCHAR(255) NOT NULL UNIQUE,
     logo VARCHAR(255)
 );
+
+ALTER TABLE Brand
+ADD COLUMN is_active BOOLEAN DEFAULT TRUE;
+
 
 -- 5. Category (Sử dụng parent_id cho phân cấp)
 CREATE TABLE Category (

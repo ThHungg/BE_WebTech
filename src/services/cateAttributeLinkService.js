@@ -45,7 +45,45 @@ const getLinksByCategoryId = async (categoryId) => {
   }
 };
 
+const deleteCateAttributeLink = async (id) => {
+  try {
+    const link = await Cate_Attribute_Link.findByPk(id);
+    if (!link) {
+      return {
+        status: "Err",
+        message: "Liên kết không tồn tại",
+      };
+    }
+
+    // Xóa attribute
+    const deleteAttribute = await Attribute.destroy({
+      where: { id: link.attribute_id },
+    });
+
+    if (!deleteAttribute) {
+      return {
+        status: "Err",
+        message: "Xóa thuộc tính thất bại",
+      };
+    }
+
+    await link.destroy();
+
+    return {
+      status: "Ok",
+      message: "Xóa liên kết thành công",
+    };
+  } catch (e) {
+    console.log(e);
+    return {
+      status: "Err",
+      message: "Lỗi hệ thống vui lòng thử lại sau",
+    };
+  }
+};
+
 module.exports = {
   createCateAttributeLink,
   getLinksByCategoryId,
+  deleteCateAttributeLink,
 };

@@ -51,6 +51,48 @@ const login = async (req, res) => {
   }
 };
 
+const logout = async (req, res) => {
+  try {
+    const { refresh_token } = req.cookies;
+    if (!refresh_token) {
+      return res.status(400).json({
+        status: "Err",
+        message: "Vui lòng đăng nhập",
+      });
+    }
+    const response = await jwtService.logout(refresh_token);
+    res.clearCookie("refresh_token");
+    return res.status(200).json(response);
+  } catch (e) {
+    return res
+      .status(500)
+      .json({ status: "Err", message: "Lỗi hệ thống vui lòng thử lại sau" });
+  }
+};
+
+const changePassword = async (req, res) => {
+  try {
+    const id = req.user.id;
+    const { oldPassword, newPassword } = req.body;
+    if (!oldPassword || !newPassword) {
+      return res.status(400).json({
+        status: "Err",
+        message: "Vui lòng nhập đầy đủ thông tin",
+      });
+    }
+    const response = await userSerivce.changePassword({
+      id,
+      oldPassword,
+      newPassword,
+    });
+    return res.status(200).json(response);
+  } catch (e) {
+    return res
+      .status(500)
+      .json({ status: "Err", message: "Lỗi hệ thống vui lòng thử lại sau" });
+  }
+};
+
 const refreshToken = async (req, res) => {
   try {
     const { refresh_token } = req.cookies;
@@ -271,6 +313,8 @@ const getAllUser = async (req, res) => {
 module.exports = {
   register,
   login,
+  logout,
+  changePassword,
   refreshToken,
   updateUser,
   updateUserById,
