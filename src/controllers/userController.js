@@ -112,7 +112,7 @@ const refreshToken = async (req, res) => {
   }
 };
 
-const updateUser = async (req, res) => {
+const updateProfile = async (req, res) => {
   try {
     const { username, phone, email, role } = req.body;
     console.log("Request User: ", req.user);
@@ -129,7 +129,8 @@ const updateUser = async (req, res) => {
     //     message: "Vui lòng nhập thông tin cần cập nhật",
     //   });
     // }
-    const reponse = await userSerivce.updateUser({
+    const reponse = await userSerivce.updateProfile({
+      id,
       username,
       phone,
       email,
@@ -316,7 +317,7 @@ module.exports = {
   logout,
   changePassword,
   refreshToken,
-  updateUser,
+  updateProfile,
   updateUserById,
   getUserById,
   addAddress,

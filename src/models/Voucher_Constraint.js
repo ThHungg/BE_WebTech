@@ -2,7 +2,7 @@ const { DataTypes } = require("sequelize");
 const { sequelize } = require("../config/db");
 
 const Voucher_Constraint = sequelize.define(
-  "Voucher_Contraint",
+  "Voucher_Constraint",
   {
     voucher_id: {
       type: DataTypes.INTEGER,
@@ -11,17 +11,15 @@ const Voucher_Constraint = sequelize.define(
     },
     min_order_amount: {
       type: DataTypes.DECIMAL(10, 2),
-      allowNull: false,
       defaultValue: 0.0,
     },
     max_discount_amount: {
       type: DataTypes.DECIMAL(10, 2),
-      allowNull: false,
-      defaultValue: 0.0,
+      allowNull: true,
     },
   },
   {
-    tableName: "Voucher_Contraint",
+    tableName: "Voucher_Constraint",
     timestamps: false,
     underscored: true,
   }

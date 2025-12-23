@@ -79,7 +79,7 @@ const createProduct = async (newProduct) => {
         ...productData,
         category_id,
         brand_id,
-        total_stock: totalStock, // Set calculated total_stock
+        total_stock: totalStock,
       },
       { transaction: t }
     );
@@ -542,6 +542,34 @@ const updateProduct = async (productInfo) => {
   }
 };
 
+const updateProductStatus = async (productId, status) => {
+  try {
+    console.log("Updating product status:", productId, status);
+    const product = await Product.findByPk(productId);
+    if (!product) {
+      return {
+        status: "Err",
+        message: "Sản phẩm không tồn tại",
+      };
+    }
+
+    product.is_active = status;
+    await product.save();
+
+    return {
+      status: "Ok",
+      message: "Cập nhật trạng thái sản phẩm thành công",
+      data: product,
+    };
+  } catch (e) {
+    console.log(e);
+    return {
+      status: "Err",
+      message: "Lỗi hệ thống, vui lòng thử lại sau",
+    };
+  }
+};
+
 const getProductDetail = async (productId) => {
   try {
     const product = await Product.findByPk(productId, {
@@ -681,6 +709,7 @@ const deleteProduct = async (productId) => {
 module.exports = {
   createProduct,
   updateProduct,
+  updateProductStatus,
   getProductDetail,
   getAllProducts,
   deleteProduct,

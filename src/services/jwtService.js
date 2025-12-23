@@ -7,7 +7,7 @@ const Refresh_Token = process.env.Refresh_Token;
 
 const generateAccessToken = (payload) => {
   const accessToken = jwt.sign({ ...payload }, Access_Token, {
-    expiresIn: "10d",
+    expiresIn: "1d",
   });
   return accessToken;
 };

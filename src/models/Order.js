@@ -9,37 +9,71 @@ const Order = sequelize.define(
       primaryKey: true,
       autoIncrement: true,
     },
+    order_code: {
+      type: DataTypes.STRING(10),
+      allowNull: false,
+      unique: true,
+    },
     user_id: {
       type: DataTypes.INTEGER,
       allowNull: false,
     },
+
     voucher_detail_id: {
-      type: DataTypes.INTEGER,
+      type: DataTypes.STRING(50),
       allowNull: true,
     },
     payment_id: {
       type: DataTypes.INTEGER,
+      allowNull: true,
+    },
+    total_amount: {
+      type: DataTypes.DECIMAL(10, 2),
       allowNull: false,
     },
-    order_status: {
-      type: DataTypes.STRING,
+    discount_amount: {
+      type: DataTypes.DECIMAL(10, 2),
+      defaultValue: 0.0,
+    },
+    final_amount: {
+      type: DataTypes.DECIMAL(10, 2),
       allowNull: false,
     },
-    payment_method: {
-      type: DataTypes.STRING,
+    recipient_name: {
+      type: DataTypes.STRING(255),
+      allowNull: false,
+    },
+    phone: {
+      type: DataTypes.STRING(20),
       allowNull: false,
     },
     shipping_address: {
-      type: DataTypes.STRING,
+      type: DataTypes.STRING(255),
       allowNull: false,
+    },
+    note: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+    },
+    order_status: {
+      type: DataTypes.ENUM(
+        "pending",
+        "confirmed",
+        "shipping",
+        "delivered",
+        "cancelled"
+      ),
+      defaultValue: "pending",
+    },
+    payment_method: {
+      type: DataTypes.STRING(50),
+      allowNull: true,
     },
   },
   {
     tableName: "Order",
     timestamps: true,
     underscored: true,
-    createdAt: "created_at",
-    updatedAt: "updated_at",
   }
 );
 

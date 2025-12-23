@@ -13,6 +13,13 @@ const Img_Product = require("./Img_Product.js");
 const Product_Attribute_Value = require("./Product_Attribute_Value.js");
 const Cart = require("./Cart.js");
 const Cart_Item = require("./Cart_Item.js");
+const Voucher = require("./Voucher.js");
+const VoucherDetail = require("./Voucher_Detail.js");
+const Voucher_Constraint = require("./Voucher_Constraint.js");
+const Voucher_Brand_Link = require("./Voucher_Brand_Link.js");
+const Order = require("./Order.js");
+const OrderDetail = require("./Order_Detail.js");
+const Review = require("./Review.js");
 
 // Role - User: Một vai trò (Role) có nhiều người dùng (User)
 Role.hasMany(User, { foreignKey: "role_id", as: "users" });
@@ -123,6 +130,56 @@ Cart_Item.belongsTo(Product_Variant, {
   as: "variant",
 });
 
+Voucher.hasMany(VoucherDetail, { foreignKey: "voucher_id" });
+VoucherDetail.belongsTo(Voucher, { foreignKey: "voucher_id" });
+
+Voucher.hasOne(Voucher_Constraint, { foreignKey: "voucher_id" });
+Voucher_Constraint.belongsTo(Voucher, { foreignKey: "voucher_id" });
+
+// Quan hệ n-n giữa Voucher và Brand qua bảng trung gian
+Voucher.belongsToMany(Brand, {
+  through: Voucher_Brand_Link,
+  foreignKey: "voucher_id",
+  otherKey: "brand_id",
+});
+Brand.belongsToMany(Voucher, {
+  through: Voucher_Brand_Link,
+  foreignKey: "brand_id",
+  otherKey: "voucher_id",
+});
+
+// Order - User: Một người dùng có nhiều đơn hàng
+User.hasMany(Order, { foreignKey: "user_id", as: "orders" });
+Order.belongsTo(User, { foreignKey: "user_id", as: "user" });
+
+// Order - VoucherDetail: Một đơn hàng có thể áp dụng một mã voucher
+VoucherDetail.hasMany(Order, { foreignKey: "voucher_detail_id", as: "orders" });
+Order.belongsTo(VoucherDetail, {
+  foreignKey: "voucher_detail_id",
+  as: "voucher",
+});
+
+// Order - OrderDetail: Một đơn hàng có nhiều chi tiết đơn hàng
+Order.hasMany(OrderDetail, { foreignKey: "order_id", as: "details" });
+OrderDetail.belongsTo(Order, { foreignKey: "order_id", as: "order" });
+
+// OrderDetail - Product_Variant: Một chi tiết đơn hàng trỏ tới một biến thể sản phẩm
+Product_Variant.hasMany(OrderDetail, {
+  foreignKey: "product_variant_id",
+  as: "orderDetails",
+});
+OrderDetail.belongsTo(Product_Variant, {
+  foreignKey: "product_variant_id",
+  as: "variant",
+});
+
+// Product - Review: Một sản phẩm có nhiều đánh giá
+Product.hasMany(Review, { foreignKey: "product_id", as: "reviews" });
+Review.belongsTo(Product, { foreignKey: "product_id", as: "product" });
+
+// User - Review: Một người dùng có nhiều đánh giá
+User.hasMany(Review, { foreignKey: "user_id", as: "reviews" });
+Review.belongsTo(User, { foreignKey: "user_id", as: "user" });
 module.exports = {
   Role,
   User,

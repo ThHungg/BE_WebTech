@@ -1,6 +1,7 @@
 const Product_Variant = require("../models/Product_Variant");
 const Cart_Item = require("../models/Cart_Item");
 const Cart = require("../models/Cart");
+const { Product } = require("../models");
 
 const addToCart = async (newItem) => {
   try {
@@ -79,6 +80,13 @@ const getCartByUserId = async (userId) => {
             {
               model: Product_Variant,
               as: "variant",
+              include: [
+                {
+                  model: Product,
+                  as: "product",
+                  attributes: ["id", "brand_id"],
+                },
+              ],
             },
           ],
         },

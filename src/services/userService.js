@@ -149,7 +149,7 @@ const changePassword = async (data) => {
   }
 };
 
-const updateUser = async (dataUpdate) => {
+const updateProfile = async (dataUpdate) => {
   try {
     const { id, username, phone, email, role } = dataUpdate;
     console.log("dataUpdate", dataUpdate);
@@ -458,7 +458,7 @@ module.exports = {
   register,
   login,
   changePassword,
-  updateUser,
+  updateProfile,
   updateUserById,
   getUserById,
   addAddress,

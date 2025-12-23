@@ -10,13 +10,16 @@ router.post("/register", userController.register);
 
 router.post("/login", userController.login);
 router.post("/refresh-token", userController.refreshToken);
+
+//Update dành cho người dùng
+router.post("/updateProfile", authMiddleware, userController.updateProfile);
+//Update dành cho admin
 router.post(
-  "/update",
+  "/update/:userId",
   authMiddleware,
-  roleMddleware(["User"]),
-  userController.updateUser
+  roleMddleware(["Admin"]),
+  userController.updateUserById
 );
-router.post("/update/:userId", authMiddleware, userController.updateUserById);
 router.post("/change-password", authMiddleware, userController.changePassword);
 router.get("/getUser", authMiddleware, userController.getUserById);
 router.get(

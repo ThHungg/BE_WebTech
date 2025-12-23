@@ -10,18 +10,37 @@ const Voucher = sequelize.define(
       autoIncrement: true,
     },
     discount_type: {
-      type: DataTypes.STRING,
+      type: DataTypes.ENUM("fixed", "percentage"),
       allowNull: false,
     },
     discount_value: {
       type: DataTypes.DECIMAL(10, 2),
       allowNull: false,
     },
-    id_active: {
+    start_date: {
+      type: DataTypes.DATE,
+      allowNull: false,
+    },
+    end_date: {
+      type: DataTypes.DATE,
+      allowNull: false,
+    },
+    is_active: {
       type: DataTypes.BOOLEAN,
       allowNull: false,
       defaultValue: true,
     },
+    usage_limit: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 0,
+    },
+    used_count: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 0,
+    },
+   
   },
   {
     tableName: "Voucher",

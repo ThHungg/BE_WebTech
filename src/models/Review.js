@@ -19,11 +19,15 @@ const Review = sequelize.define(
     },
     content: {
       type: DataTypes.TEXT,
-      allowNull: false,
+      allowNull: true,
     },
-    rating: {
-      type: DataTypes.INTEGER,
+    rate: {
+      type: DataTypes.TINYINT,
       allowNull: false,
+      validate: {
+        min: 1,
+        max: 5,
+      },
     },
   },
   {
@@ -31,7 +35,7 @@ const Review = sequelize.define(
     timestamps: true,
     underscored: true,
     createdAt: "created_at",
-    updatedAt: false,
+    updatedAt: "updated_at",
   }
 );
 

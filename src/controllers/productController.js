@@ -77,6 +77,30 @@ const updateProduct = async (req, res) => {
   }
 };
 
+const updateProductStatus = async (req, res) => {
+  try {
+    const { productId } = req.params;
+    const { status } = req.body;
+    console.log(productId, status);
+    if (!productId || status === undefined) {
+      return res.status(400).json({
+        status: "Err",
+        message: "Vui lòng cung cấp đầy đủ thông tin",
+      });
+    }
+    const response = await productService.updateProductStatus(
+      productId,
+      status
+    );
+    return res.status(200).json(response);
+  } catch (e) {
+    console.log(e);
+    return res
+      .status(500)
+      .json({ status: "Err", message: "Lỗi hệ thống vui lòng thử lại sau" });
+  }
+};
+
 const getProductDetail = async (req, res) => {
   try {
     const { productId } = req.params;
@@ -131,6 +155,7 @@ const deleteProduct = async (req, res) => {
 module.exports = {
   createProduct,
   updateProduct,
+  updateProductStatus,
   deleteProduct,
   getProductDetail,
   getAllProducts,

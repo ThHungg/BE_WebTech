@@ -14,6 +14,7 @@ router.post(
   uploadProduct.fields([{ name: "productImages", maxCount: 10 }]),
   productController.updateProduct
 );
+router.put("/updateStatus/:productId", productController.updateProductStatus);
 
 router.get("/detail/:productId", productController.getProductDetail);
 router.get("/getAll", productController.getAllProducts);
