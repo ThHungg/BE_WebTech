@@ -6,9 +6,10 @@ const { Product } = require("../models");
 const addToCart = async (newItem) => {
   try {
     const { userId, product_variant_id, quantity } = newItem;
+
     const checkCart = await Cart.findOne({ where: { user_id: userId } });
     if (!checkCart) {
-      const newCart = await Cart.create({ user_id: userId });
+     await Cart.create({ user_id: userId });
       return {
         status: "Ok",
         message: "Đã tạo giỏ hàng mới và thêm sản phẩm vào giỏ hàng",
@@ -80,11 +81,12 @@ const getCartByUserId = async (userId) => {
             {
               model: Product_Variant,
               as: "variant",
+             
               include: [
                 {
                   model: Product,
                   as: "product",
-                  attributes: ["id", "brand_id"],
+                  attributes: ["id", "brand_id", "name"],
                 },
               ],
             },

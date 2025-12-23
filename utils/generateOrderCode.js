@@ -1,4 +1,4 @@
-export const generateOrderCode = () => {
+const generateOrderCode = () => {
   const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
   let randomPart = "";
   for (let i = 0; i < 5; i++) {
@@ -7,4 +7,7 @@ export const generateOrderCode = () => {
     );
   }
   return `ORD${randomPart}`;
+};
+module.exports = {
+  generateOrderCode,
 };
