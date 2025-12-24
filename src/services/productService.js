@@ -607,9 +607,15 @@ const getProductDetail = async (productId) => {
   }
 };
 
-const getAllProducts = async () => {
+const getAllProducts = async (page = 1, limit = 12) => {
   try {
+    const offset = (page - 1) * limit;
+
+    const total = await Product.count();
+
     const products = await Product.findAll({
+      offset,
+      limit,
       include: [
         { association: "brand" },
         { association: "category" },
@@ -627,10 +633,15 @@ const getAllProducts = async () => {
         },
       ],
     });
+
     return {
       status: "Ok",
       message: "Lấy tất cả sản phẩm thành công",
       data: products,
+      total: total,
+      page: page,
+      limit: limit,
+      totalPages: Math.ceil(total / limit),
     };
   } catch (e) {
     console.log(e);
@@ -641,7 +652,7 @@ const getAllProducts = async () => {
   }
 };
 
-const getProductBySlug = async (slug) => {
+const getProductBySlug = async (slug, page = 1, limit = 12) => {
   try {
     const parentCategory = await Category.findOne({ where: { slug } });
     if (!parentCategory) {
@@ -667,6 +678,15 @@ const getProductBySlug = async (slug) => {
 
     const categoryIds = subCategories.map((cat) => cat.id);
 
+    const offset = (page - 1) * limit;
+
+    const total = await Product.count({
+      where: {
+        category_id: { [Op.in]: categoryIds },
+        is_active: true,
+      },
+    });
+
     const products = await Product.findAll({
       where: {
         category_id: { [Op.in]: categoryIds },
@@ -688,11 +708,17 @@ const getProductBySlug = async (slug) => {
           association: "attributeValues",
         },
       ],
+      offset: offset,
+      limit: limit,
     });
     return {
       status: "Ok",
       message: "Lấy tất cả sản phẩm thành công",
       data: products,
+      total: total,
+      page: page,
+      limit: limit,
+      totalPages: Math.ceil(total / limit),
     };
   } catch (e) {
     console.log(e);

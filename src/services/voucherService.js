@@ -3,6 +3,10 @@ const VoucherDetail = require("../models/Voucher_Detail");
 const Voucher = require("../models/Voucher");
 const Voucher_Constraint = require("../models/Voucher_Constraint");
 const Voucher_Brand_Link = require("../models/Voucher_Brand_Link");
+const Cart = require("../models/Cart");
+const Cart_Item = require("../models/Cart_Item");
+const Product = require("../models/Product");
+const Product_Variant = require("../models/Product_Variant");
 const { sequelize } = require("../config/db");
 
 const createVoucher = async (newVoucher) => {
@@ -117,6 +121,107 @@ const createVoucher = async (newVoucher) => {
   }
 };
 
+const updateVoucher = async (id, updatedFields) => {
+  const t = await sequelize.transaction();
+  try {
+    const voucher = await Voucher.findByPk(id, {
+      include: [{ model: VoucherDetail, as: "Voucher_Details" }],
+    });
+    if (!voucher) {
+      return {
+        status: "Err",
+        message: "Voucher không tồn tại",
+      };
+    }
+
+    const {
+      discount_type,
+      discount_value,
+      code,
+      brandId,
+      min_order_amount,
+      max_discount_amount,
+      start_date,
+      end_date,
+      usage_limit,
+      is_active,
+    } = updatedFields;
+
+    if (code && code !== voucher.Voucher_Details.code) {
+      const checkCode = await VoucherDetail.findOne({ where: { code } });
+      if (checkCode) {
+        return {
+          status: "Err",
+          message: "Mã voucher đã tồn tại, vui lòng chọn mã khác",
+        };
+      }
+    }
+
+    await voucher.update(
+      {
+        discount_type,
+        discount_value,
+        start_date,
+        end_date,
+        usage_limit,
+        is_active,
+      },
+      { transaction: t }
+    );
+
+    await voucher.Voucher_Details[0].update(
+      {
+        code,
+        is_active,
+      },
+      { transaction: t }
+    );
+
+    await Voucher_Constraint.update(
+      {
+        min_order_amount,
+        max_discount_amount,
+      },
+      { where: { voucher_id: id }, transaction: t }
+    );
+
+    if (brandId) {
+      const checkBrand = await Brand.findOne({ where: { id: brandId } });
+      if (!checkBrand) {
+        return {
+          status: "Err",
+          message: "Thương hiệu không tồn tại",
+        };
+      }
+
+      await Voucher_Brand_Link.upsert(
+        {
+          voucher_id: id,
+          brand_id: brandId,
+        },
+        { transaction: t }
+      );
+    }
+
+    await t.commit();
+    return {
+      status: "Ok",
+      message: "Cập nhật voucher thành công",
+      data: {
+        voucher_id: voucher.id,
+        code,
+      },
+    };
+  } catch (e) {
+    await t.rollback();
+    console.error(e);
+    return {
+      status: "Err",
+      message: "Lỗi hệ thống, vui lòng thử lại sau",
+    };
+  }
+};
+
 const getAllVouchers = async () => {
   try {
     const vouchers = await Voucher.findAll({
@@ -166,7 +271,7 @@ const getVoucherById = async (id) => {
         {
           model: Brand,
           as: "Brands",
-          through: { attributes: {} }, // Loại bỏ thông tin bảng trung gian
+          through: { attributes: {} },
         },
       ],
     });
@@ -192,8 +297,40 @@ const getVoucherById = async (id) => {
   }
 };
 
-const applyVoucher = async (code, cartItems) => {
+const applyVoucher = async (code, userId) => {
   try {
+    // Lấy giỏ hàng và các item được chọn
+    const cart = await Cart.findOne({
+      where: { user_id: userId },
+      include: [
+        {
+          model: Cart_Item,
+          as: "items",
+          where: { is_selected: true },
+          include: [
+            {
+              model: Product_Variant,
+              as: "variant",
+              include: [
+                {
+                  model: Product,
+                  as: "product",
+                  attributes: ["id", "brand_id"],
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    });
+
+    if (!cart || !cart.items || cart.items.length === 0) {
+      return {
+        status: "Err",
+        message: "Giỏ hàng trống hoặc không có sản phẩm được chọn",
+      };
+    }
+
     const voucherDetail = await VoucherDetail.findOne({
       where: { code, is_active: true },
       include: [
@@ -207,19 +344,14 @@ const applyVoucher = async (code, cartItems) => {
         },
       ],
     });
-    const checkCode = await VoucherDetail.findOne({ where: { code } });
-    if (!checkCode) {
-      return {
-        status: "Err",
-        message: "Mã voucher không tồn tại",
-      };
-    }
+
     if (!voucherDetail || !voucherDetail.Voucher) {
       return {
         status: "Err",
         message: "Mã voucher không tồn tại hoặc đã bị vô hiệu hóa",
       };
     }
+
     const voucher = voucherDetail.Voucher;
     const now = new Date();
 
@@ -229,6 +361,7 @@ const applyVoucher = async (code, cartItems) => {
         message: "Voucher chưa đến hạn sử dụng",
       };
     }
+
     if (now > new Date(voucher.end_date)) {
       return {
         status: "Err",
@@ -247,14 +380,16 @@ const applyVoucher = async (code, cartItems) => {
     let applicableAmount = 0;
     const brandIds = voucher.Brands.map((brand) => brand.id);
 
-    cartItems.forEach((item) => {
-      totalOrderAmount += item.price * item.quantity;
+    cart.items.forEach((item) => {
+      const itemTotal = item.variant.price * item.quantity;
+      totalOrderAmount += itemTotal;
+
       if (brandIds.length > 0) {
-        if (brandIds.includes(item.brand_id)) {
-          applicableAmount += item.price * item.quantity;
+        if (brandIds.includes(item.variant.product.brand_id)) {
+          applicableAmount += itemTotal;
         }
       } else {
-        applicableAmount += item.price * item.quantity;
+        applicableAmount += itemTotal;
       }
     });
 
@@ -264,12 +399,10 @@ const applyVoucher = async (code, cartItems) => {
         message: "Voucher không áp dụng cho sản phẩm trong giỏ hàng",
       };
     }
+
     const constraint = voucher.Voucher_Constraint;
-    if (constraint) {
-      if (
-        constraint.min_order_amount &&
-        totalOrderAmount < constraint.min_order_amount
-      ) {
+    if (constraint && constraint.min_order_amount) {
+      if (totalOrderAmount < constraint.min_order_amount) {
         return {
           status: "Err",
           message: `Đơn hàng tối thiểu phải đạt ${constraint.min_order_amount} để áp dụng voucher`,
@@ -281,6 +414,7 @@ const applyVoucher = async (code, cartItems) => {
     if (voucher.discount_type === "percentage") {
       discountAmount = (applicableAmount * voucher.discount_value) / 100;
       if (
+        constraint &&
         constraint.max_discount_amount > 0 &&
         discountAmount > constraint.max_discount_amount
       ) {
@@ -289,6 +423,7 @@ const applyVoucher = async (code, cartItems) => {
     } else if (voucher.discount_type === "fixed") {
       discountAmount = voucher.discount_value;
       if (
+        constraint &&
         constraint.max_discount_amount > 0 &&
         discountAmount > constraint.max_discount_amount
       ) {
@@ -306,7 +441,8 @@ const applyVoucher = async (code, cartItems) => {
       data: {
         code,
         discount_amount: discountAmount,
-        total_after_discount: totalOrderAmount - discountAmount,
+        oldPrice: totalOrderAmount,
+        newPrice: totalOrderAmount - discountAmount,
       },
     };
   } catch (e) {

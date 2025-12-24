@@ -5,7 +5,7 @@ const createBrand = async (req, res) => {
   try {
     const { name } = req.body;
     const image = req?.file?.filename;
-    console.log("Create Brand: ", name, image);
+
     if (!name || !image) {
       if (image) {
         deleteFile(`public/Img/brands/${image}`);

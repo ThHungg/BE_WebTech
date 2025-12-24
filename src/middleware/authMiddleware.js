@@ -26,7 +26,7 @@ const authMiddleware = (req, res, next) => {
   }
 };
 
-const roleMddleware = (allowedRole) => {
+const roleMiddleware = (allowedRole) => {
   console.log("Allowed Roles: ", allowedRole);
   return (req, res, next) => {
     const userRole = req.user.role;
@@ -39,4 +39,4 @@ const roleMddleware = (allowedRole) => {
   };
 };
 
-module.exports = { authMiddleware, roleMddleware };
+module.exports = { authMiddleware, roleMiddleware };

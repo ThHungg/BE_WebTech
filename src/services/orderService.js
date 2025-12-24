@@ -1,10 +1,12 @@
 const { generateOrderCode } = require("../../utils/generateOrderCode");
 const { sequelize } = require("../config/db");
-const { Product_Variant, Product } = require("../models");
+const { Product_Variant, Product, Img_Product } = require("../models");
 const CartItem = require("../models/Cart_Item");
 const Order = require("../models/Order");
 const OrderDetail = require("../models/Order_Detail");
+const Cart = require("../models/Cart");
 const voucherService = require("./voucherService");
+const cartServices = require("./cartServices");
 const { Op } = require("sequelize");
 
 const createOrder = async (orderData) => {
@@ -13,7 +15,6 @@ const createOrder = async (orderData) => {
     const {
       userId,
       voucher_code,
-      cartItemIds,
       recipient_name,
       phone,
       shipping_address,
@@ -21,44 +22,49 @@ const createOrder = async (orderData) => {
       note,
     } = orderData;
 
-    const itemsInCart = await CartItem.findAll({
-      where: { id: { [Op.in]: cartItemIds }, cart_id: userId },
-      include: [{ model: Product_Variant, as: "variant" }],
-      transaction: t,
-    });
+    // Lấy selected cart items từ cartServices
+    const cartResponse = await cartServices.getCartSelectedByUserId(userId);
 
-    if (!itemsInCart || itemsInCart.length === 0) {
+    if (
+      cartResponse.status === "Err" ||
+      !cartResponse.data ||
+      cartResponse.data.items.length === 0
+    ) {
       return {
         status: "Err",
-        message: "Giỏ hàng trống hoặc không hợp lệ",
+        message: "Giỏ hàng trống hoặc không có sản phẩm được chọn",
       };
     }
 
-    let totalAmount = 0;
+    const selectedItems = cartResponse.data.items;
+    let totalAmount = cartResponse.data.totalPrice;
     const orderDetailsData = [];
 
-    for (const item of itemsInCart) {
+    for (const item of selectedItems) {
       const variant = item.variant;
 
       if (!variant) {
+        await t.rollback();
         return {
           status: "Err",
-          message: `Phiên bản sản phẩm không tồn tại cho item trong giỏ hàng`,
+          message: `Phiên bản sản phẩm không tồn tại`,
         };
       }
       if (variant.stock < item.quantity) {
+        await t.rollback();
         return {
           status: "Err",
-          message: `Sản phẩm ${variant.id} không đủ số lượng trong kho`,
+          message: `Sản phẩm không đủ số lượng trong kho`,
         };
       }
 
       const itemTotalPrice = variant.price * item.quantity;
-      totalAmount += itemTotalPrice;
 
-      variant.stock -= item.quantity;
-      variant.sold += item.quantity;
-      await variant.save({ transaction: t });
+      if (payment_method === "COD") {
+        variant.stock -= item.quantity;
+        variant.sold += item.quantity;
+        await variant.save({ transaction: t });
+      }
 
       orderDetailsData.push({
         product_variant_id: variant.id,
@@ -70,31 +76,30 @@ const createOrder = async (orderData) => {
 
     let discountAmount = 0;
     if (voucher_code) {
-      console.log("Applying voucher:", voucher_code);
       const voucherResponse = await voucherService.applyVoucher(
         voucher_code,
-        itemsInCart
+        userId
       );
       if (voucherResponse.status === "Err") {
+        await t.rollback();
         return {
           status: "Err",
           message: voucherResponse.message,
         };
       }
-      discountAmount = voucherResponse.data?.discount_amount || 0;
+      discountAmount = voucherResponse.data.discount_amount;
     }
 
-    const finalAmount = totalAmount - discountAmount;
-    const orderCode = generateOrderCode();
+    const finalTotal = totalAmount - discountAmount;
 
     const newOrder = await Order.create(
       {
-        order_code: orderCode,
+        order_code: generateOrderCode(),
         user_id: userId,
-        voucher_detail_id: voucher_code || null,
+        voucher_code: voucher_code || null,
         total_amount: totalAmount,
         discount_amount: discountAmount,
-        final_amount: finalAmount,
+        final_amount: finalTotal,
         recipient_name,
         phone,
         shipping_address,
@@ -104,16 +109,23 @@ const createOrder = async (orderData) => {
       },
       { transaction: t }
     );
+
     const finalDetails = orderDetailsData.map((detail) => ({
       ...detail,
       order_id: newOrder.id,
     }));
+
     await OrderDetail.bulkCreate(finalDetails, { transaction: t });
 
-    await CartItem.destroy({
-      where: { id: cartItemIds },
-      transaction: t,
-    });
+    if (payment_method === "COD") {
+      await CartItem.destroy({
+        where: {
+          cart_id: (await Cart.findOne({ where: { user_id: userId } })).id,
+          is_selected: true,
+        },
+        transaction: t,
+      });
+    }
 
     await t.commit();
     return {
@@ -123,6 +135,7 @@ const createOrder = async (orderData) => {
     };
   } catch (e) {
     await t.rollback();
+    console.log(e);
     return {
       status: "Err",
       message: "Lỗi hệ thống, vui lòng thử lại sau",
@@ -164,10 +177,8 @@ const getAllOrders = async ({
   status = "",
 } = {}) => {
   try {
-    // Xây dựng điều kiện WHERE
     const whereConditions = {};
 
-    // Tìm kiếm theo order_code, recipient_name, phone
     if (search) {
       whereConditions[Op.or] = [
         { order_code: { [Op.like]: `%${search}%` } },
@@ -215,12 +226,10 @@ const getAllOrders = async ({
       status: "Ok",
       message: "Lấy danh sách đơn hàng thành công",
       data: orders,
-      pagination: {
-        total,
-        limit: parseInt(limit),
-        offset: parseInt(offset),
-        pages: Math.ceil(total / parseInt(limit)),
-      },
+      total,
+      limit: parseInt(limit),
+      offset: parseInt(offset),
+      pages: Math.ceil(total / parseInt(limit)),
     };
   } catch (e) {
     console.log(e);
@@ -274,10 +283,13 @@ const getOrderById = async (id) => {
   }
 };
 
-const getOrderByUser = async (userId) => {
+const getOrderByUser = async (userId, page = 1, limit = 12) => {
   try {
+    const offset = (page - 1) * limit;
     const orders = await Order.findAll({
       where: { user_id: userId },
+      limit: parseInt(limit),
+      offset: parseInt(offset),
       include: [
         {
           model: OrderDetail,
@@ -291,6 +303,14 @@ const getOrderByUser = async (userId) => {
                   model: Product,
                   as: "product",
                   attributes: ["id", "name"],
+                  include: [
+                    {
+                      model: Img_Product,
+                      as: "images",
+                      attributes: ["image"],
+                      limit: 1,
+                    },
+                  ],
                 },
               ],
             },
@@ -298,10 +318,16 @@ const getOrderByUser = async (userId) => {
         },
       ],
     });
+
+    const total = await Order.count({ where: { user_id: userId } });
     return {
       status: "Ok",
       message: "Lấy danh sách đơn hàng của người dùng thành công",
       data: orders,
+      total: total,
+      page: page,
+      limit: limit,
+      totalPages: Math.ceil(total / limit),
     };
   } catch (e) {
     console.log(e);
@@ -367,6 +393,61 @@ const deleteOrder = async (id) => {
   }
 };
 
+const cancelOrder = async (userId, orderId) => {
+  try {
+    const order = await Order.findOne({
+      where: { id: orderId, user_id: userId },
+      include: [
+        {
+          model: OrderDetail,
+          as: "details",
+          include: [
+            {
+              model: Product_Variant,
+              as: "variant",
+            },
+          ],
+        },
+      ],
+    });
+    if (!order) {
+      return {
+        status: "Err",
+        message: "Đơn hàng không tồn tại",
+      };
+    }
+    if (order.order_status !== "pending") {
+      return {
+        status: "Err",
+        message: "Chỉ có thể hủy đơn hàng ở trạng thái đang chờ xử lý",
+      };
+    }
+
+    for (const detail of order.details) {
+      const variant = detail.variant;
+      if (variant) {
+        variant.stock += detail.quantity;
+        variant.sold -= detail.quantity;
+        await variant.save();
+      }
+    }
+
+    order.order_status = "cancelled";
+    await order.save();
+    return {
+      status: "Ok",
+      message: "Hủy đơn hàng thành công",
+      data: order,
+    };
+  } catch (e) {
+    console.log(e);
+    return {
+      status: "Err",
+      message: "Lỗi hệ thống, vui lòng thử lại sau",
+    };
+  }
+};
+
 module.exports = {
   createOrder,
   updateOrderStatus,
@@ -375,4 +456,5 @@ module.exports = {
   getOrderByUser,
   getStatsOrder,
   deleteOrder,
+  cancelOrder,
 };

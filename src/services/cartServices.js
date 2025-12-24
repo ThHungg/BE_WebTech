@@ -1,7 +1,7 @@
 const Product_Variant = require("../models/Product_Variant");
 const Cart_Item = require("../models/Cart_Item");
 const Cart = require("../models/Cart");
-const { Product } = require("../models");
+const { Product, Img_Product } = require("../models");
 
 const addToCart = async (newItem) => {
   try {
@@ -159,9 +159,109 @@ const selectCartItem = async (cartItemId, is_selected) => {
   }
 };
 
+const getCartSelectedByUserId = async (userId) => {
+  try {
+    const cart = await Cart.findOne({
+      where: { user_id: userId },
+      include: [
+        {
+          model: Cart_Item,
+          as: "items",
+          where: { is_selected: true },
+          include: [
+            {
+              model: Product_Variant,
+              as: "variant",
+              include: [
+                {
+                  model: Product,
+                  as: "product",
+                  attributes: ["id", "brand_id", "name"],
+                  include: [
+                    {
+                      model: Img_Product,
+                      as: "images",
+                      attributes: ["image"],
+                      limit: 1,
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    });
+    if (!cart) {
+      return {
+        status: "Ok",
+        message: "Không có mục giỏ hàng được chọn",
+        cart: null,
+      };
+    }
+
+    let totalPrice = 0;
+    let totalQuantity = 0;
+
+    cart.items.forEach((item) => {
+      const itemPrice = item.variant.price * item.quantity;
+      totalPrice += itemPrice;
+      totalQuantity += item.quantity;
+    });
+
+    return {
+      status: "Ok",
+      message: "Lấy các mục giỏ hàng được chọn thành công",
+      data: {
+        items: cart.items,
+        totalPrice,
+        totalQuantity,
+      },
+    };
+  } catch (e) {
+    console.log(e);
+    return {
+      status: "Err",
+      message: "Lỗi hệ thống vui lòng thử lại sau",
+    };
+  }
+};
+
+const deleteCartItemSelected = async (userId) => {
+  try {
+    const cart = await Cart.findOne({ where: { user_id: userId } });
+    if (!cart) {
+      return {
+        status: "Err",
+        message: "Giỏ hàng không tồn tại",
+      };
+    }
+
+    await Cart_Item.destroy({
+      where: {
+        cart_id: cart.id,
+        is_selected: true,
+      },
+    });
+
+    return {
+      status: "Ok",
+      message: "Xóa các mục giỏ hàng được chọn thành công",
+    };
+  } catch (e) {
+    console.log(e);
+    return {
+      status: "Err",
+      message: "Lỗi hệ thống vui lòng thử lại sau",
+    };
+  }
+};
+
 module.exports = {
   addToCart,
   getCartByUserId,
   deleteCartItem,
   selectCartItem,
+  getCartSelectedByUserId,
+  deleteCartItemSelected,
 };

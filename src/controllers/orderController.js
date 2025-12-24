@@ -5,7 +5,6 @@ const createOrder = async (req, res) => {
     const userId = req.user.id;
     const {
       voucher_code,
-      cartItemIds, 
       recipient_name,
       phone,
       shipping_address,
@@ -13,14 +12,16 @@ const createOrder = async (req, res) => {
       note,
     } = req.body;
 
-    if (!cartItemIds || cartItemIds.length === 0) {
-      return res.status(400).json({ status: "Err", message: "Giỏ hàng trống" });
+    if (!recipient_name || !phone || !shipping_address || !payment_method) {
+      return res.status(400).json({
+        status: "Err",
+        message: "Vui lòng cung cấp đầy đủ thông tin giao hàng",
+      });
     }
 
     const response = await orderService.createOrder({
       userId,
       voucher_code,
-      cartItemIds,
       recipient_name,
       phone,
       shipping_address,
@@ -29,6 +30,7 @@ const createOrder = async (req, res) => {
     });
     return res.status(200).json(response);
   } catch (e) {
+    console.log(e);
     return res.status(500).json({ status: "Err", message: e.message });
   }
 };
@@ -93,7 +95,9 @@ const getOrderById = async (req, res) => {
 const getOrderByUser = async (req, res) => {
   try {
     const userId = req.user.id;
-    const response = await orderService.getOrderByUser(userId);
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 12;
+    const response = await orderService.getOrderByUser(userId, page, limit);
     return res.status(200).json(response);
   } catch (e) {
     console.log(e);
@@ -128,6 +132,20 @@ const deleteOrder = async (req, res) => {
   }
 };
 
+const cancelOrder = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { id } = req.params;
+    const response = await orderService.cancelOrder(userId, id);
+    return res.status(200).json(response);
+  } catch (e) {
+    console.log(e);
+    return res
+      .status(500)
+      .json({ status: "Err", message: "Lỗi hệ thống vui lòng thử lại sau" });
+  }
+};
+
 module.exports = {
   createOrder,
   updateOrderStatus,
@@ -136,4 +154,5 @@ module.exports = {
   getOrderByUser,
   getStatsOrder,
   deleteOrder,
+  cancelOrder,
 };

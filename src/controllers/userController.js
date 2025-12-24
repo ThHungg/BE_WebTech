@@ -53,16 +53,15 @@ const login = async (req, res) => {
 
 const logout = async (req, res) => {
   try {
-    const { refresh_token } = req.cookies;
-    if (!refresh_token) {
-      return res.status(400).json({
-        status: "Err",
-        message: "Vui lòng đăng nhập",
-      });
-    }
-    const response = await jwtService.logout(refresh_token);
-    res.clearCookie("refresh_token");
-    return res.status(200).json(response);
+    res.clearCookie("refresh_token", {
+      httpOnly: true,
+      secure: true,
+      sameSite: "none",
+    });
+    return res.status(200).json({
+      status: "Ok",
+      message: "Đăng xuất thành công",
+    });
   } catch (e) {
     return res
       .status(500)

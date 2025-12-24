@@ -123,7 +123,9 @@ const getProductDetail = async (req, res) => {
 
 const getAllProducts = async (req, res) => {
   try {
-    const response = await productService.getAllProducts();
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 12;
+    const response = await productService.getAllProducts(page, limit);
     return res.status(200).json(response);
   } catch (e) {
     console.log(e);
@@ -136,13 +138,20 @@ const getAllProducts = async (req, res) => {
 const getProductBySlug = async (req, res) => {
   try {
     const { slug } = req.params;
+    const { page = 1, limit = 12 } = req.query;
+
     if (!slug) {
       return res.status(400).json({
         status: "Err",
         message: "Vui lòng cung cấp slug sản phẩm",
       });
     }
-    const response = await productService.getProductBySlug(slug);
+
+    const response = await productService.getProductBySlug(
+      slug,
+      parseInt(page),
+      parseInt(limit)
+    );
     return res.status(200).json(response);
   } catch (e) {
     console.log(e);

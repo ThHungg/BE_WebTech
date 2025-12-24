@@ -10,10 +10,21 @@ router.post(
   cartController.selectCartItem
 );
 router.get("/getCart", authMiddleware, cartController.getCartByUserId);
+router.get(
+  "/getCartSelected",
+  authMiddleware,
+  cartController.getCartSelectedByUserId
+);
 router.delete(
   "/deleteItem/:itemId",
   authMiddleware,
   cartController.deleteCartItem
+);
+
+router.delete(
+  "/deleteItemSelected",
+  authMiddleware,
+  cartController.deleteCartItemSelected
 );
 
 module.exports = router;

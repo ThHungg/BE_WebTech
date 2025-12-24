@@ -10,8 +10,6 @@ const createAttributes = async (req, res) => {
       });
     }
 
-    console.log("attributes", attributes);
-
     for (const attribute of attributes) {
       if (!attribute.name) {
         return res.status(400).json({

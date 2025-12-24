@@ -83,9 +83,37 @@ const selectCartItem = async (req, res) => {
   }
 };
 
+const getCartSelectedByUserId = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const response = await cartService.getCartSelectedByUserId(userId);
+    return res.status(200).json(response);
+  } catch (e) {
+    console.log(e);
+    return res
+      .status(500)
+      .json({ status: "Err", message: "Lỗi hệ thống vui lòng thử lại sau" });
+  }
+};
+
+const deleteCartItemSelected = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const response = await cartService.deleteCartItemSelected(userId);
+    return res.status(200).json(response);
+  } catch (e) {
+    console.log(e);
+    return res
+      .status(500)
+      .json({ status: "Err", message: "Lỗi hệ thống vui lòng thử lại sau" });
+  }
+};
+
 module.exports = {
   addToCart,
   getCartByUserId,
   deleteCartItem,
   selectCartItem,
+  getCartSelectedByUserId,
+  deleteCartItemSelected,
 };

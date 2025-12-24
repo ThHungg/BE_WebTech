@@ -3,7 +3,7 @@ const router = express.Router();
 const userController = require("../controllers/userController");
 const {
   authMiddleware,
-  roleMddleware,
+  roleMiddleware,
 } = require("../middleware/authMiddleware");
 
 router.post("/register", userController.register);
@@ -17,7 +17,7 @@ router.post("/updateProfile", authMiddleware, userController.updateProfile);
 router.post(
   "/update/:userId",
   authMiddleware,
-  roleMddleware(["Admin"]),
+  roleMiddleware(["Admin"]),
   userController.updateUserById
 );
 router.post("/change-password", authMiddleware, userController.changePassword);
@@ -25,14 +25,14 @@ router.get("/getUser", authMiddleware, userController.getUserById);
 router.get(
   "/getAll",
   authMiddleware,
-  roleMddleware(["Admin"]),
+  roleMiddleware(["Admin"]),
   userController.getAllUser
 );
 
 router.delete(
   "/delete/:userId",
   authMiddleware,
-  roleMddleware(["Admin"]),
+  roleMiddleware(["Admin"]),
   userController.deleteUser
 );
 

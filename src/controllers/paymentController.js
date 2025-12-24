@@ -1,5 +1,11 @@
 const moment = require("moment-timezone");
 const vnpayService = require("../services/vnpayService");
+const { deleteCartItemSelected } = require("./cartController");
+const OrderDetail = require("../models/Order_Detail");
+const Order = require("../models/Order");
+const { Product_Variant } = require("../models");
+const CartItem = require("../models/Cart_Item");
+const Cart = require("../models/Cart");
 
 const getClientIp = (req) => {
   return (
@@ -31,7 +37,6 @@ const createVNPayPayment = (req, res) => {
 
     const ipAddr = getClientIp(req);
 
-
     const paymentData = vnpayService.createPaymentUrl(
       orderId,
       parseInt(amount),
@@ -56,41 +61,76 @@ const createVNPayPayment = (req, res) => {
   }
 };
 
+const clearCartAndUpdateStock = async (orderCode) => {
+  try {
+    const order = await Order.findOne({
+      where: { order_code: orderCode },
+    });
+
+    if (!order) {
+      console.error("Order not found:", orderCode);
+      return;
+    }
+
+    const orderDetails = await OrderDetail.findAll({
+      where: { order_id: order.id },
+    });
+
+    for (const detail of orderDetails) {
+      const variant = await Product_Variant.findByPk(detail.product_variant_id);
+      if (variant) {
+        variant.stock -= detail.quantity;
+        variant.sold += detail.quantity;
+        await variant.save();
+      }
+    }
+
+    // Xóa cart items của người dùng
+    const cart = await Cart.findOne({ where: { user_id: order.user_id } });
+    if (cart) {
+      await CartItem.destroy({
+        where: {
+          cart_id: cart.id,
+          is_selected: true,
+        },
+      });
+    }
+
+    console.log("Stock updated and cart cleared for order:", orderCode);
+  } catch (error) {
+    console.error("Error clearing cart and updating stock:", error);
+  }
+};
+
 const handleVNPayReturn = (req, res) => {
   try {
     const query = { ...req.query };
     const result = vnpayService.verifyPaymentResult(query);
 
     if (!result.isValid) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid signature",
-        data: result,
-      });
+      return res.redirect(
+        `http://localhost:3000/checkout/payment-failed?message=Invalid+signature`
+      );
     }
 
     const isSuccess = result.responseCode === "00";
 
-    res.json({
-      success: true,
-      isPaymentSuccess: isSuccess,
-      message: isSuccess ? "Thanh toán thành công" : "Thanh toán thất bại",
-      data: {
-        orderId: result.orderId,
-        amount: result.amount,
-        transactionNo: result.transactionNo,
-        bankCode: result.bankCode,
-        payDate: result.payDate,
-        responseCode: result.responseCode,
-      },
-    });
+    if (isSuccess) {
+      clearCartAndUpdateStock(result.orderId);
+
+      return res.redirect(
+        `http://localhost:3000/checkout/payment-success?orderId=${result.orderId}&amount=${result.amount}`
+      );
+    } else {
+      return res.redirect(
+        `http://localhost:3000/checkout/payment-failed?message=Payment+failed`
+      );
+    }
   } catch (error) {
     console.error("Error handling VNPay return:", error);
-    res.status(500).json({
-      success: false,
-      message: "Internal server error",
-      error: error.message,
-    });
+    res.redirect(
+      `http://localhost:3000/checkout/payment-failed?message=Internal+server+error`
+    );
   }
 };
 
@@ -119,10 +159,9 @@ const handleVNPayWebhook = (req, res) => {
   }
 };
 
-
-
 module.exports = {
   createVNPayPayment,
   handleVNPayReturn,
   handleVNPayWebhook,
+  clearCartAndUpdateStock,
 };

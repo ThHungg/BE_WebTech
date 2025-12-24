@@ -4,16 +4,20 @@ const brandController = require("../controllers/brandController");
 const { uploadBrand, makeOptional } = require("../middleware/upload");
 const {
   authMiddleware,
-  roleMddleware,
+  roleMiddleware,
 } = require("../middleware/authMiddleware");
 
 router.post(
   "/create",
+  authMiddleware,
+  roleMiddleware(["Admin"]),
   uploadBrand.single("brandImage"),
   brandController.createBrand
 );
 router.post(
   "/update/:brandId",
+  authMiddleware,
+  roleMiddleware(["Admin"]),
   uploadBrand.single("brandImage"),
   brandController.updateBrand
 );
@@ -23,7 +27,7 @@ router.get("/getAll", brandController.getAllBrands);
 router.delete(
   "/delete/:brandId",
   authMiddleware,
-  roleMddleware(["Admin"]),
+  roleMiddleware(["Admin"]),
   brandController.deleteBrand
 );
 module.exports = router;
