@@ -18,6 +18,7 @@ router.put("/updateStatus/:productId", productController.updateProductStatus);
 
 router.get("/detail/:productId", productController.getProductDetail);
 router.get("/getAll", productController.getAllProducts);
+router.get("/getBySlug/:slug", productController.getProductBySlug);
 
 router.delete("/delete/:productId", productController.deleteProduct);
 module.exports = router;

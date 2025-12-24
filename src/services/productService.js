@@ -624,7 +624,68 @@ const getAllProducts = async () => {
         },
         {
           association: "attributeValues",
-          // Remova o include aqui também
+        },
+      ],
+    });
+    return {
+      status: "Ok",
+      message: "Lấy tất cả sản phẩm thành công",
+      data: products,
+    };
+  } catch (e) {
+    console.log(e);
+    return {
+      status: "Err",
+      message: "Lỗi hệ thống, vui lòng thử lại sau",
+    };
+  }
+};
+
+const getProductBySlug = async (slug) => {
+  try {
+    const parentCategory = await Category.findOne({ where: { slug } });
+    if (!parentCategory) {
+      return {
+        status: "Err",
+        message: "Danh mục không tồn tại",
+      };
+    }
+
+    const subCategories = await Category.findAll({
+      where: {
+        [Op.or]: [
+          {
+            id: parentCategory.id,
+          },
+          {
+            parent_id: parentCategory.id,
+          },
+        ],
+      },
+      attributes: ["id"],
+    });
+
+    const categoryIds = subCategories.map((cat) => cat.id);
+
+    const products = await Product.findAll({
+      where: {
+        category_id: { [Op.in]: categoryIds },
+        is_active: true,
+      },
+      include: [
+        { association: "brand" },
+        { association: "category" },
+        { association: "images" },
+        {
+          association: "variants",
+          limit: 1,
+        },
+        {
+          association: "attributes",
+          through: { attributes: [] },
+        },
+        {
+          association: "attributeValues",
         },
       ],
     });
@@ -712,5 +773,6 @@ module.exports = {
   updateProductStatus,
   getProductDetail,
   getAllProducts,
+  getProductBySlug,
   deleteProduct,
 };

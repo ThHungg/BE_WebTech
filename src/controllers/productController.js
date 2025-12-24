@@ -133,6 +133,25 @@ const getAllProducts = async (req, res) => {
   }
 };
 
+const getProductBySlug = async (req, res) => {
+  try {
+    const { slug } = req.params;
+    if (!slug) {
+      return res.status(400).json({
+        status: "Err",
+        message: "Vui lòng cung cấp slug sản phẩm",
+      });
+    }
+    const response = await productService.getProductBySlug(slug);
+    return res.status(200).json(response);
+  } catch (e) {
+    console.log(e);
+    return res
+      .status(500)
+      .json({ status: "Err", message: "Lỗi hệ thống vui lòng thử lại sau" });
+  }
+};
+
 const deleteProduct = async (req, res) => {
   try {
     const { productId } = req.params;
@@ -159,4 +178,5 @@ module.exports = {
   deleteProduct,
   getProductDetail,
   getAllProducts,
+  getProductBySlug,
 };
