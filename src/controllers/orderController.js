@@ -5,7 +5,7 @@ const createOrder = async (req, res) => {
     const userId = req.user.id;
     const {
       voucher_code,
-      cartItems,
+      cartItemIds, 
       recipient_name,
       phone,
       shipping_address,
@@ -13,10 +13,14 @@ const createOrder = async (req, res) => {
       note,
     } = req.body;
 
+    if (!cartItemIds || cartItemIds.length === 0) {
+      return res.status(400).json({ status: "Err", message: "Giỏ hàng trống" });
+    }
+
     const response = await orderService.createOrder({
       userId,
       voucher_code,
-      cartItems,
+      cartItemIds,
       recipient_name,
       phone,
       shipping_address,
@@ -25,10 +29,7 @@ const createOrder = async (req, res) => {
     });
     return res.status(200).json(response);
   } catch (e) {
-    console.log(e);
-    return res
-      .status(500)
-      .json({ status: "Err", message: "Lỗi hệ thống vui lòng thử lại sau" });
+    return res.status(500).json({ status: "Err", message: e.message });
   }
 };
 

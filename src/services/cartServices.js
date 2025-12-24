@@ -7,15 +7,11 @@ const addToCart = async (newItem) => {
   try {
     const { userId, product_variant_id, quantity } = newItem;
 
-    const checkCart = await Cart.findOne({ where: { user_id: userId } });
+    let checkCart = await Cart.findOne({ where: { user_id: userId } });
     if (!checkCart) {
-     await Cart.create({ user_id: userId });
-      return {
-        status: "Ok",
-        message: "Đã tạo giỏ hàng mới và thêm sản phẩm vào giỏ hàng",
-        cart: newCart,
-      };
+      checkCart = await Cart.create({ user_id: userId });
     }
+
     const checkVariant = await Product_Variant.findOne({
       where: { id: product_variant_id },
     });
@@ -29,7 +25,7 @@ const addToCart = async (newItem) => {
     if (quantity > checkVariant.stock) {
       return {
         status: "Err",
-        message: "Số lượng trông kho không đủ",
+        message: "Số lượng trong kho không đủ",
       };
     }
 
@@ -81,7 +77,7 @@ const getCartByUserId = async (userId) => {
             {
               model: Product_Variant,
               as: "variant",
-             
+
               include: [
                 {
                   model: Product,
@@ -115,9 +111,9 @@ const getCartByUserId = async (userId) => {
   }
 };
 
-const deleteCartItem = async (cartItemId) => {
+const deleteCartItem = async (itemId) => {
   try {
-    const cartItem = await Cart_Item.findByPk(cartItemId);
+    const cartItem = await Cart_Item.findByPk(itemId);
     if (!cartItem) {
       return {
         status: "Err",
@@ -167,4 +163,5 @@ module.exports = {
   addToCart,
   getCartByUserId,
   deleteCartItem,
+  selectCartItem,
 };

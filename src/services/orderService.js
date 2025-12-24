@@ -6,13 +6,14 @@ const Order = require("../models/Order");
 const OrderDetail = require("../models/Order_Detail");
 const voucherService = require("./voucherService");
 const { Op } = require("sequelize");
+
 const createOrder = async (orderData) => {
   const t = await sequelize.transaction();
   try {
     const {
       userId,
       voucher_code,
-      cartItems,
+      cartItemIds,
       recipient_name,
       phone,
       shipping_address,
@@ -20,43 +21,72 @@ const createOrder = async (orderData) => {
       note,
     } = orderData;
 
-    console.log("voucherCode", voucher_code);
+    const itemsInCart = await CartItem.findAll({
+      where: { id: { [Op.in]: cartItemIds }, cart_id: userId },
+      include: [{ model: Product_Variant, as: "variant" }],
+      transaction: t,
+    });
+
+    if (!itemsInCart || itemsInCart.length === 0) {
+      return {
+        status: "Err",
+        message: "Giỏ hàng trống hoặc không hợp lệ",
+      };
+    }
 
     let totalAmount = 0;
-    for (const item of cartItems) {
-      const variant = await Product_Variant.findByPk(item.product_variant_id);
+    const orderDetailsData = [];
+
+    for (const item of itemsInCart) {
+      const variant = item.variant;
+
       if (!variant) {
-        throw new Error(
-          `Phiên bản sản phẩm với ID ${item.product_variant_id} không tồn tại`
-        );
+        return {
+          status: "Err",
+          message: `Phiên bản sản phẩm không tồn tại cho item trong giỏ hàng`,
+        };
       }
       if (variant.stock < item.quantity) {
-        throw new Error(`Số lượng trong kho không đủ`);
+        return {
+          status: "Err",
+          message: `Sản phẩm ${variant.id} không đủ số lượng trong kho`,
+        };
       }
-      totalAmount += variant.price * item.quantity;
+
+      const itemTotalPrice = variant.price * item.quantity;
+      totalAmount += itemTotalPrice;
+
       variant.stock -= item.quantity;
       variant.sold += item.quantity;
       await variant.save({ transaction: t });
+
+      orderDetailsData.push({
+        product_variant_id: variant.id,
+        quantity: item.quantity,
+        price: variant.price,
+        total_price: itemTotalPrice,
+      });
     }
 
     let discountAmount = 0;
     if (voucher_code) {
+      console.log("Applying voucher:", voucher_code);
       const voucherResponse = await voucherService.applyVoucher(
         voucher_code,
-        cartItems
+        itemsInCart
       );
       if (voucherResponse.status === "Err") {
-        await t.rollback();
         return {
           status: "Err",
           message: voucherResponse.message,
         };
       }
-      discountAmount = voucherResponse.data.discount_amount;
+      discountAmount = voucherResponse.data?.discount_amount || 0;
     }
 
     const finalAmount = totalAmount - discountAmount;
     const orderCode = generateOrderCode();
+
     const newOrder = await Order.create(
       {
         order_code: orderCode,
@@ -74,19 +104,14 @@ const createOrder = async (orderData) => {
       },
       { transaction: t }
     );
-
-    const orderDetails = cartItems.map((item) => ({
+    const finalDetails = orderDetailsData.map((detail) => ({
+      ...detail,
       order_id: newOrder.id,
-      product_variant_id: item.product_variant_id,
-      quantity: item.quantity,
-      price: item.price,
-      total_price: item.price * item.quantity,
     }));
-
-    await OrderDetail.bulkCreate(orderDetails, { transaction: t });
+    await OrderDetail.bulkCreate(finalDetails, { transaction: t });
 
     await CartItem.destroy({
-      where: { product_variant_id: cartItems.map((i) => i.product_variant_id) },
+      where: { id: cartItemIds },
       transaction: t,
     });
 
@@ -98,7 +123,6 @@ const createOrder = async (orderData) => {
     };
   } catch (e) {
     await t.rollback();
-    console.log(e);
     return {
       status: "Err",
       message: "Lỗi hệ thống, vui lòng thử lại sau",

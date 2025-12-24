@@ -1,56 +1,128 @@
-const createPayment = (req, res) => {
-  process.env.TZ = "Asia/Ho_Chi_Minh";
+const moment = require("moment-timezone");
+const vnpayService = require("../services/vnpayService");
 
-  let date = new Date();
-  let createDate = moment(date).format("YYYYMMDDHHmmss");
-
-  let ipAddr =
+const getClientIp = (req) => {
+  return (
     req.headers["x-forwarded-for"] ||
     req.connection.remoteAddress ||
     req.socket.remoteAddress ||
-    req.connection.socket.remoteAddress;
+    req.connection.socket?.remoteAddress ||
+    "unknown"
+  );
+};
 
-  let config = require("config");
+const createVNPayPayment = (req, res) => {
+  try {
+    const { amount, orderId, bankCode, language } = req.query;
 
-  let tmnCode = config.get("vnp_TmnCode");
-  let secretKey = config.get("vnp_HashSecret");
-  let vnpUrl = config.get("vnp_Url");
-  let returnUrl = config.get("vnp_ReturnUrl");
-  let orderId = moment(date).format("DDHHmmss");
-  let amount = req.body.amount;
-  let bankCode = req.body.bankCode;
+    if (!amount || !orderId) {
+      return res.status(400).json({
+        success: false,
+        message: "Amount and orderId are required",
+      });
+    }
 
-  let locale = req.body.language;
-  if (locale === null || locale === "") {
-    locale = "vn";
+    if (isNaN(amount) || amount <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid amount",
+      });
+    }
+
+    const ipAddr = getClientIp(req);
+
+
+    const paymentData = vnpayService.createPaymentUrl(
+      orderId,
+      parseInt(amount),
+      ipAddr,
+      bankCode || "",
+      language || "vn"
+    );
+
+    res.json({
+      success: true,
+      paymentUrl: paymentData.paymentUrl,
+      orderId: paymentData.orderId,
+      amount: paymentData.amount,
+    });
+  } catch (error) {
+    console.error("Error creating VNPay payment:", error);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
+      error: error.message,
+    });
   }
-  let currCode = "VND";
-  let vnp_Params = {};
-  vnp_Params["vnp_Version"] = "2.1.0";
-  vnp_Params["vnp_Command"] = "pay";
-  vnp_Params["vnp_TmnCode"] = tmnCode;
-  vnp_Params["vnp_Locale"] = locale;
-  vnp_Params["vnp_CurrCode"] = currCode;
-  vnp_Params["vnp_TxnRef"] = orderId;
-  vnp_Params["vnp_OrderInfo"] = "Thanh toan cho ma GD:" + orderId;
-  vnp_Params["vnp_OrderType"] = "other";
-  vnp_Params["vnp_Amount"] = amount * 100;
-  vnp_Params["vnp_ReturnUrl"] = returnUrl;
-  vnp_Params["vnp_IpAddr"] = ipAddr;
-  vnp_Params["vnp_CreateDate"] = createDate;
-  if (bankCode !== null && bankCode !== "") {
-    vnp_Params["vnp_BankCode"] = bankCode;
+};
+
+const handleVNPayReturn = (req, res) => {
+  try {
+    const query = { ...req.query };
+    const result = vnpayService.verifyPaymentResult(query);
+
+    if (!result.isValid) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid signature",
+        data: result,
+      });
+    }
+
+    const isSuccess = result.responseCode === "00";
+
+    res.json({
+      success: true,
+      isPaymentSuccess: isSuccess,
+      message: isSuccess ? "Thanh toán thành công" : "Thanh toán thất bại",
+      data: {
+        orderId: result.orderId,
+        amount: result.amount,
+        transactionNo: result.transactionNo,
+        bankCode: result.bankCode,
+        payDate: result.payDate,
+        responseCode: result.responseCode,
+      },
+    });
+  } catch (error) {
+    console.error("Error handling VNPay return:", error);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
+      error: error.message,
+    });
   }
+};
 
-  vnp_Params = sortObject(vnp_Params);
+const handleVNPayWebhook = (req, res) => {
+  try {
+    const query = { ...req.body };
+    const result = vnpayService.verifyPaymentResult(query);
 
-  let querystring = require("qs");
-  let signData = querystring.stringify(vnp_Params, { encode: false });
-  let crypto = require("crypto");
-  let hmac = crypto.createHmac("sha512", secretKey);
-  let signed = hmac.update(new Buffer(signData, "utf-8")).digest("hex");
-  vnp_Params["vnp_SecureHash"] = signed;
-  vnpUrl += "?" + querystring.stringify(vnp_Params, { encode: false });
+    if (!result.isValid) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid signature",
+      });
+    }
 
-  res.redirect(vnpUrl);
+    res.json({
+      success: true,
+      message: "Webhook received",
+    });
+  } catch (error) {
+    console.error("Error handling VNPay webhook:", error);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
+  }
+};
+
+
+
+module.exports = {
+  createVNPayPayment,
+  handleVNPayReturn,
+  handleVNPayWebhook,
 };

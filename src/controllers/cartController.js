@@ -39,14 +39,15 @@ const getCartByUserId = async (req, res) => {
 
 const deleteCartItem = async (req, res) => {
   try {
-    const { cartItemId } = req.params;
-    if (!cartItemId) {
+    const { itemId } = req.params;
+
+    if (!itemId) {
       return res.status(400).json({
         status: "Err",
         message: "Vui lòng cung cấp ID mục giỏ hàng",
       });
     }
-    const response = await cartService.deleteCartItem(cartItemId);
+    const response = await cartService.deleteCartItem(itemId);
     return res.status(200).json(response);
   } catch (e) {
     console.log(e);
