@@ -49,6 +49,7 @@ const addToCart = async (newItem) => {
         cart_id: checkCart.id,
         product_variant_id: product_variant_id,
         quantity: quantity,
+        is_selected: false,
       });
       return {
         status: "Ok",
@@ -122,6 +123,34 @@ const selectAllCartItems = async (userId) => {
     };
   }
 };
+
+const unSelectAllCartItems = async (userId) => {
+ 
+  try {
+    const cart = await Cart.findOne({ where: { user_id: userId } });
+    if (!cart) {
+      return {
+        status: "Err",
+        message: "Giỏ hàng không tồn tại",
+      };
+    }
+    await Cart_Item.update(
+      { is_selected: false },
+      { where: { cart_id: cart.id } }
+    );
+    return {
+      status: "Ok",
+      message: "Đã bỏ chọn tất cả mục trong giỏ hàng",
+    };
+  } catch (error) {
+    console.log(e);
+    return {
+      status: "Err",
+      message: "Lỗi hệ thống vui lòng thử lại sau",
+    };
+  }
+
+    }
 
 const getCartByUserId = async (userId) => {
   try {
@@ -200,6 +229,26 @@ const deleteCartItem = async (itemId) => {
   }
 };
 
+const deleteMultipleCartItems = async (cartItemIds) => {
+  try {
+    await Cart_Item.destroy({
+      where: {
+        id: cartItemIds,
+      },
+    });
+    return {
+      status: "Ok",
+      message: "Xóa các mục giỏ hàng thành công",
+    };
+  } catch (e) {
+    console.log(e);
+    return {
+      status: "Err",
+      message: "Lỗi hệ thống vui lòng thử lại sau",
+    };
+  }
+};
+
 const selectCartItem = async (cartItemId, is_selected) => {
   try {
     const cartItem = await Cart_Item.findByPk(cartItemId);
@@ -215,6 +264,26 @@ const selectCartItem = async (cartItemId, is_selected) => {
       status: "Ok",
       message: "Cập nhật trạng thái lựa chọn mục giỏ hàng thành công",
       cartItem: cartItem,
+    };
+  } catch (e) {
+    console.log(e);
+    return {
+      status: "Err",
+      message: "Lỗi hệ thống vui lòng thử lại sau",
+    };
+  }
+};
+
+const selectMultipleCartItems = async (cartItemIds, is_selected) => {
+  try {
+    await Cart_Item.update(
+      { is_selected: is_selected },
+      { where: { id: cartItemIds } }
+    );
+    return {
+      status: "Ok",
+      message: "Cập nhật trạng thái lựa chọn các mục giỏ hàng thành công",
+      cartItemIds: cartItemIds,
     };
   } catch (e) {
     console.log(e);
@@ -323,13 +392,18 @@ const deleteCartItemSelected = async (userId) => {
   }
 };
 
+
+
 module.exports = {
   addToCart,
   getCartByUserId,
   updateCartItemQuantity,
   selectAllCartItems,
+  unSelectAllCartItems,
   deleteCartItem,
+  deleteMultipleCartItems,
   selectCartItem,
+  selectMultipleCartItems,
   getCartSelectedByUserId,
   deleteCartItemSelected,
 };

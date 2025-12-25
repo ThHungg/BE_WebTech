@@ -9,7 +9,17 @@ router.post(
   authMiddleware,
   cartController.selectCartItem
 );
+router.post(
+  "/select-multiple",
+  authMiddleware,
+  cartController.selectMultipleCartItems
+);
 router.put("/selectAll", authMiddleware, cartController.selectAllCartItems);
+router.put(
+  "/unSelectAll",
+  authMiddleware,
+  cartController.unSelectAllCartItems
+);
 router.put(
   "/updateItemQuantity/:cartItemId",
   authMiddleware,
@@ -25,6 +35,12 @@ router.delete(
   "/deleteItem/:itemId",
   authMiddleware,
   cartController.deleteCartItem
+);
+
+router.delete(
+  "/delete-multiple",
+  authMiddleware,
+  cartController.deleteMultipleCartItems
 );
 
 router.delete(
