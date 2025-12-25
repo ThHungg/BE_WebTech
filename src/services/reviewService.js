@@ -1,4 +1,4 @@
-const { Product } = require("../models");
+const { Product, User } = require("../models");
 const Review = require("../models/Review");
 
 const createReview = async (newReview) => {
@@ -62,6 +62,13 @@ const getReviewsByProductId = async (productId) => {
   try {
     const reviews = await Review.findAll({
       where: { product_id: productId },
+      include: [
+        {
+          model: User,
+          as: "user",
+          attributes: ["username"],
+        },
+      ],
     });
     return {
       status: "Ok",

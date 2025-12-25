@@ -586,6 +586,9 @@ const getProductDetail = async (productId) => {
         {
           association: "attributeValues",
         },
+        {
+          association: "reviews",
+        }
       ],
     });
     if (!product) {
