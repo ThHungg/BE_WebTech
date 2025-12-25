@@ -9,6 +9,11 @@ router.post(
   authMiddleware,
   cartController.selectCartItem
 );
+router.put(
+  "/updateItemQuantity/:cartItemId",
+  authMiddleware,
+  cartController.updateCartItemQuantity
+);
 router.get("/getCart", authMiddleware, cartController.getCartByUserId);
 router.get(
   "/getCartSelected",

@@ -9,6 +9,7 @@ const { sequelize } = require("../config/db");
 const { deleteFile } = require("../../utils/deleteFile");
 const { Attribute, Cate_Attribute_Link } = require("../models");
 const { Op } = require("sequelize");
+const ProductQueryBuilder = require("../../utils/productQueryBuilder");
 
 const deleteProductFiles = (productImages) => {
   if (Array.isArray(productImages) && productImages.length > 0) {
@@ -607,44 +608,33 @@ const getProductDetail = async (productId) => {
   }
 };
 
-const getAllProducts = async (page = 1, limit = 12) => {
+const getAllProducts = async (page = 1, limit = 12, categoryId = null) => {
   try {
-    const offset = (page - 1) * limit;
+    const queryBuilder = new ProductQueryBuilder()
+      .setPagination(page, limit)
+      .withDetails();
 
-    const total = await Product.count();
+    if (categoryId) {
+      queryBuilder.filterByCategory(categoryId);
+    }
 
-    const products = await Product.findAll({
-      offset,
-      limit,
-      include: [
-        { association: "brand" },
-        { association: "category" },
-        { association: "images" },
-        {
-          association: "variants",
-          limit: 1,
-        },
-        {
-          association: "attributes",
-          through: { attributes: [] },
-        },
-        {
-          association: "attributeValues",
-        },
-      ],
-    });
+    const builtQuery = queryBuilder.build();
+
+    const { rows: products, count: total } = await Product.findAndCountAll(
+      builtQuery
+    );
 
     return {
       status: "Ok",
       message: "Lấy tất cả sản phẩm thành công",
       data: products,
       total: total,
-      page: page,
-      limit: limit,
+      page: parseInt(page),
+      limit: parseInt(limit),
       totalPages: Math.ceil(total / limit),
     };
   } catch (e) {
-    console.log(e);
+    console.error(e);
     return {
       status: "Err",
       message: "Lỗi hệ thống, vui lòng thử lại sau",

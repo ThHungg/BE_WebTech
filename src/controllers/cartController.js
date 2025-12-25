@@ -24,6 +24,35 @@ const addToCart = async (req, res) => {
   }
 };
 
+const updateCartItemQuantity = async (req, res) => {
+  try {
+    const { cartItemId } = req.params;
+    const { quantity } = req.body;
+    if (!cartItemId) {
+      return res.status(400).json({
+        status: "Err",
+        message: "Vui lòng cung cấp ID mục giỏ hàng",
+      });
+    }
+    if (typeof quantity !== "number" || quantity < 1) {
+      return res.status(400).json({
+        status: "Err",
+        message: "Vui lòng cung cấp số lượng hợp lệ",
+      });
+    }
+    const response = await cartService.updateCartItemQuantity(
+      cartItemId,
+      quantity
+    );
+    return res.status(200).json(response);
+  } catch (e) {
+    console.log(e);
+    return res
+      .status(500)
+      .json({ status: "Err", message: "Lỗi hệ thống vui lòng thử lại sau" });
+  }
+};
+
 const getCartByUserId = async (req, res) => {
   try {
     const userId = req.user.id;
@@ -112,6 +141,7 @@ const deleteCartItemSelected = async (req, res) => {
 module.exports = {
   addToCart,
   getCartByUserId,
+  updateCartItemQuantity,
   deleteCartItem,
   selectCartItem,
   getCartSelectedByUserId,
