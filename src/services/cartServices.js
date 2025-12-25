@@ -65,6 +65,38 @@ const addToCart = async (newItem) => {
   }
 };
 
+const updateCartItemQuantity = async (cartItemId, quantity) => {
+  try {
+    const cartItem = await Cart_Item.findByPk(cartItemId);
+    if (!cartItem) {
+      return {
+        status: "Err",
+        message: "Mục giỏ hàng không tồn tại",
+      };
+    }
+    const variant = await Product_Variant.findByPk(cartItem.product_variant_id);
+    if (quantity > variant.stock) {
+      return {
+        status: "Err",
+        message: "Số lượng trong kho không đủ",
+      };
+    }
+    cartItem.quantity = quantity;
+    await cartItem.save();
+    return {
+      status: "Ok",
+      message: "Cập nhật số lượng mục giỏ hàng thành công",
+      cartItem: cartItem,
+    };
+  } catch (e) {
+    console.log(e);
+    return {
+      status: "Err",
+      message: "Lỗi hệ thống vui lòng thử lại sau",
+    };
+  }
+};
+
 const getCartByUserId = async (userId) => {
   try {
     const cart = await Cart.findOne({
@@ -260,6 +292,7 @@ const deleteCartItemSelected = async (userId) => {
 module.exports = {
   addToCart,
   getCartByUserId,
+  updateCartItemQuantity,
   deleteCartItem,
   selectCartItem,
   getCartSelectedByUserId,
