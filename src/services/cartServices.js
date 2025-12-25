@@ -97,6 +97,32 @@ const updateCartItemQuantity = async (cartItemId, quantity) => {
   }
 };
 
+const selectAllCartItems = async (userId) => {
+  try {
+    const cart = await Cart.findOne({ where: { user_id: userId } });
+    if (!cart) {
+      return {
+        status: "Err",
+        message: "Giỏ hàng không tồn tại",
+      };
+    }
+    await Cart_Item.update(
+      { is_selected: true },
+      { where: { cart_id: cart.id } }
+    );
+    return {
+      status: "Ok",
+      message: "Đã chọn tất cả mục trong giỏ hàng",
+    };
+  } catch (e) {
+    console.log(e);
+    return {
+      status: "Err",
+      message: "Lỗi hệ thống vui lòng thử lại sau",
+    };
+  }
+};
+
 const getCartByUserId = async (userId) => {
   try {
     const cart = await Cart.findOne({
@@ -293,6 +319,7 @@ module.exports = {
   addToCart,
   getCartByUserId,
   updateCartItemQuantity,
+  selectAllCartItems,
   deleteCartItem,
   selectCartItem,
   getCartSelectedByUserId,

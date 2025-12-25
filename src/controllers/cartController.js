@@ -53,6 +53,19 @@ const updateCartItemQuantity = async (req, res) => {
   }
 };
 
+const selectAllCartItems = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const response = await cartService.selectAllCartItems(userId);
+    return res.status(200).json(response);
+  } catch (e) {
+    console.log(e);
+    return res
+      .status(500)
+      .json({ status: "Err", message: "Lỗi hệ thống vui lòng thử lại sau" });
+  }
+};
+
 const getCartByUserId = async (req, res) => {
   try {
     const userId = req.user.id;
@@ -142,6 +155,7 @@ module.exports = {
   addToCart,
   getCartByUserId,
   updateCartItemQuantity,
+  selectAllCartItems,
   deleteCartItem,
   selectCartItem,
   getCartSelectedByUserId,
