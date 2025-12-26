@@ -9,11 +9,6 @@ router.post(
   authMiddleware,
   cartController.selectCartItem
 );
-router.post(
-  "/select-multiple",
-  authMiddleware,
-  cartController.selectMultipleCartItems
-);
 router.put("/selectAll", authMiddleware, cartController.selectAllCartItems);
 router.put(
   "/unSelectAll",

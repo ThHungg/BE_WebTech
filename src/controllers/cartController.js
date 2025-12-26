@@ -157,31 +157,6 @@ const selectCartItem = async (req, res) => {
   }
 };
 
-const selectMultipleCartItems = async (req, res) => {
-  try {
-    const { cartItemIds, is_selected } = req.body;
-    if (!cartItemIds || !Array.isArray(cartItemIds) || cartItemIds.length === 0) {
-      return res.status(400).json({
-        status: "Err",
-        message: "Vui lòng cung cấp danh sách ID mục giỏ hàng hợp lệ",
-      });
-    }
-    if (typeof is_selected !== "boolean") {
-      return res.status(400).json({
-        status: "Err",
-        message: "Vui lòng cung cấp trạng thái lựa chọn hợp lệ",
-      });
-    }
-    const response = await cartService.selectMultipleCartItems(cartItemIds, is_selected);
-    return res.status(200).json(response);
-  } catch (e) {
-    console.log(e);
-    return res
-      .status(500)
-      .json({ status: "Err", message: "Lỗi hệ thống vui lòng thử lại sau" });
-  }
-};
-
 const getCartSelectedByUserId = async (req, res) => {
   try {
     const userId = req.user.id;
@@ -219,7 +194,6 @@ module.exports = {
   deleteCartItem,
   deleteMultipleCartItems,
   selectCartItem,
-  selectMultipleCartItems,
   getCartSelectedByUserId,
   deleteCartItemSelected,
 };

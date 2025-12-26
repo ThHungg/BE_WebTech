@@ -274,26 +274,6 @@ const selectCartItem = async (cartItemId, is_selected) => {
   }
 };
 
-const selectMultipleCartItems = async (cartItemIds, is_selected) => {
-  try {
-    await Cart_Item.update(
-      { is_selected: is_selected },
-      { where: { id: cartItemIds } }
-    );
-    return {
-      status: "Ok",
-      message: "Cập nhật trạng thái lựa chọn các mục giỏ hàng thành công",
-      cartItemIds: cartItemIds,
-    };
-  } catch (e) {
-    console.log(e);
-    return {
-      status: "Err",
-      message: "Lỗi hệ thống vui lòng thử lại sau",
-    };
-  }
-};
-
 const getCartSelectedByUserId = async (userId) => {
   try {
     const cart = await Cart.findOne({
@@ -403,7 +383,6 @@ module.exports = {
   deleteCartItem,
   deleteMultipleCartItems,
   selectCartItem,
-  selectMultipleCartItems,
   getCartSelectedByUserId,
   deleteCartItemSelected,
 };
